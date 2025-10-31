@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> Product Showcase </title>
+    <style>
+        body { font-family: sans-serif;
+               background-color: rgb(227, 177, 115);
+               margin: 0;
+               padding: 0;
+               text-align: center;}
+        header { background-color: rgb(67, 37, 1);
+                 color: aliceblue;
+                 padding: 15px 0;
+                 font-size: 28px;
+                 font-weight: bold;}
+
+        .container { width: 30%;
+                      margin: 30px auto;
+                     background-color: aliceblue;
+                     padding: 20px;
+                     border-radius: 10px;
+                     box-shadow:  0 0 10px coral(0.0.0.0.1);
+                     text-align: left;}
+
+        .product-info { margin-top: 15px;}
+
+        .product-name { text-align: left;
+                        color: black;
+                        font-size: 20px;
+                        font-weight: bold;}
+        
+        .price { text-align: left;
+                 font-size: 18px;}
+
+        .price del { color: rgb(162, 92, 0);
+                     margin-right: 10px;}
+
+        .price ins { color: rgb(0, 5, 140);
+                     font-weight: bold;
+                     text-decoration: none;}
+
+        .description { margin-top: 20px;
+                       line-height: 1.6;
+                       color: rgb(65, 59, 17);}
+    </style>
+</head>  
+<body>
+    <header> Student Product Page </header>
+    <div class="container">
+        <img src="new_tech.png" width="450" alt="Product Image" class="product-image">
+        <div class="product-info">
+            <h4 class="product-name"> Wireless Headphones</h4>
+            <p class="price">
+                <del>₹2999</del>
+                <ins>₹1999</ins>
+            </p>
+            <p class="description">
+                Enjoy crystal clear sound with our wireless Headphones.
+                Equipped with noise cancellation, 20-hour battery life, and comfortable ear cushions.
+                Perfect for study, travel, and online classes.
+            </p>
+        </div>
+    </div>
+</body>  
+</html>
