@@ -1,0 +1,3118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>QuickCalc Utility</title>
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+  <style>
+    :root {
+      --primary: #7b2cbf;
+      --primary-dark: #5a189a;
+      --primary-light: #f3ebfc;
+      --secondary: #0284c7;
+      --secondary-dark: #0369a1;
+      --danger: #d90429;
+      --danger-dark: #b00020;
+      --success: #1b873a;
+      --warning: #d97706;
+      --surface: #ffffff;
+      --bg: #f8f7fc;
+      --border: #e2def0;
+      --text: #1d1b26;
+      --text-muted: #646174;
+      --sidebar-w: 395px;
+
+      /* Calculator theme */
+      --calc-bg: #1e1e24;
+      --calc-display: #111116;
+      --calc-btn: #2b2b36;
+      --calc-op: #ff9f0a;
+      --calc-fn: #a5a5a5;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      background: var(--calc-bg);
+      color: var(--text);
+      overflow-x: hidden;
+    }
+
+    /* ============================================================
+       PERSONA 1: INNOCUOUS CALCULATOR
+       ============================================================ */
+    #calculator-persona {
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      max-width: 420px;
+      margin: 0 auto;
+      min-height: 100vh;
+      padding: 24px 20px 36px;
+      background: var(--calc-bg);
+    }
+
+    .calc-top-bar {
+      display: flex;
+      justify-content: space-between;
+      color: #727284;
+      font-size: 13px;
+      margin-bottom: auto;
+      padding: 6px 4px;
+      font-weight: 500;
+    }
+
+    .calc-screen {
+      margin-bottom: 24px;
+      padding: 20px 14px;
+      text-align: right;
+      background: var(--calc-display);
+      border-radius: 16px;
+      border: 1px solid #282833;
+    }
+
+    .calc-history {
+      color: #75758a;
+      font-size: 15px;
+      min-height: 20px;
+      margin-bottom: 4px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .calc-val {
+      color: #ffffff;
+      font-size: 48px;
+      font-weight: 300;
+      letter-spacing: -1px;
+      overflow-x: auto;
+      white-space: nowrap;
+      scrollbar-width: none;
+    }
+
+    .calc-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+    }
+
+    .c-btn {
+      border: none;
+      border-radius: 24px;
+      height: 70px;
+      font-size: 26px;
+      font-weight: 400;
+      color: #ffffff;
+      background: var(--calc-btn);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.12s ease, transform 0.1s ease;
+    }
+    .c-btn:active {
+      transform: scale(0.95);
+      opacity: 0.8;
+    }
+    .c-btn.span-2 {
+      grid-column: span 2;
+      border-radius: 35px;
+      padding-left: 28px;
+      justify-content: flex-start;
+    }
+    .c-btn.fn {
+      background: var(--calc-fn);
+      color: #000;
+      font-weight: 500;
+      font-size: 22px;
+    }
+    .c-btn.op {
+      background: var(--calc-op);
+      color: #fff;
+      font-size: 30px;
+    }
+
+    /* ============================================================
+       PERSONA 2: HERHORIZON COMMAND PORTAL
+       ============================================================ */
+    #haven-persona {
+      display: none;
+      width: 100vw;
+      height: 100vh;
+      background: var(--bg);
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .top-strip {
+      background: #181226;
+      color: #c5bfd8;
+      padding: 6px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12.5px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      flex-shrink: 0;
+      z-index: 1000;
+    }
+
+    .top-strip-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .top-strip-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-stealth-exit {
+      background: var(--danger);
+      color: #fff;
+      border: none;
+      padding: 5px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: background 0.15s;
+    }
+    .btn-stealth-exit:hover { background: var(--danger-dark); }
+
+    .btn-disguise {
+      background: #2f293d;
+      color: #fff;
+      border: 1px solid #4a425f;
+      padding: 5px 11px;
+      border-radius: 6px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .btn-stealth-pass {
+      background: rgba(255,255,255,0.08);
+      color: #d8b4fe;
+      border: 1px dashed rgba(255,255,255,0.25);
+      padding: 3px 9px;
+      border-radius: 6px;
+      font-size: 11.5px;
+      cursor: pointer;
+    }
+
+    .portal-nav {
+      background: #241442;
+      color: #fff;
+      padding: 8px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      flex-shrink: 0;
+      z-index: 900;
+    }
+
+    .logo-container {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .logo-badge {
+      background: var(--primary);
+      color: #fff;
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      box-shadow: 0 2px 8px rgba(123, 44, 191, 0.4);
+    }
+
+    .brand-title {
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      color: #fff;
+    }
+
+    .brand-tag {
+      background: #4a2179;
+      color: #d8b4fe;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      margin-left: 4px;
+    }
+
+    .nav-tabs {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+
+    .nav-tab-btn {
+      background: transparent;
+      border: none;
+      color: #c9c1df;
+      padding: 7px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+    }
+
+    .nav-tab-btn:hover, .nav-tab-btn.active {
+      background: #432174;
+      color: #ffffff;
+    }
+
+    .nav-tab-btn.admin-link {
+      background: rgba(2, 132, 199, 0.18);
+      color: #bae6fd;
+      border: 1px solid rgba(2, 132, 199, 0.35);
+    }
+    .nav-tab-btn.admin-link:hover, .nav-tab-btn.admin-link.active {
+      background: #0284c7;
+      color: #ffffff;
+    }
+
+    .btn-sos {
+      background: var(--danger);
+      color: #fff;
+      border: none;
+      padding: 7px 16px;
+      border-radius: 8px;
+      font-weight: 800;
+      font-size: 13.5px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 2px 10px rgba(217, 4, 41, 0.4);
+    }
+
+    /* WORKSPACE BODY */
+    .portal-body {
+      flex: 1;
+      display: flex;
+      position: relative;
+      overflow: hidden;
+      width: 100%;
+      height: calc(100vh - 92px);
+    }
+
+    .standalone-view {
+      display: none;
+      width: 100%;
+      height: 100%;
+      overflow-y: auto;
+      padding: 24px 24px 60px;
+      background: var(--bg);
+    }
+
+    .content-constraint {
+      max-width: 1140px;
+      margin: 0 auto;
+    }
+
+    .view-title-block {
+      margin-bottom: 20px;
+    }
+    .view-title-block h2 {
+      font-size: 24px;
+      font-weight: 800;
+      color: #1f1a30;
+      margin-bottom: 4px;
+    }
+    .view-title-block p {
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+
+    /* SAFE SHELTERS DIRECTORY BANNER */
+    .network-summary-banner {
+      background: linear-gradient(135deg, #241442 0%, #3e1b70 100%);
+      border-radius: 14px;
+      color: #ffffff;
+      padding: 18px 24px;
+      margin-bottom: 22px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+      box-shadow: 0 6px 20px rgba(36, 20, 66, 0.2);
+    }
+
+    .net-stats-row {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      flex-wrap: wrap;
+    }
+    .net-stat-item {
+      display: flex;
+      flex-direction: column;
+    }
+    .net-stat-num {
+      font-size: 26px;
+      font-weight: 800;
+      color: #a7f3d0;
+      line-height: 1.1;
+    }
+    .net-stat-label {
+      font-size: 11.5px;
+      color: #d1c7eb;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+
+    .shelter-filters {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+
+    .filter-chip {
+      background: #fff;
+      border: 1px solid var(--border);
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .filter-chip.active {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+    }
+
+    .shelter-cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: 18px;
+    }
+
+    .shelter-entry-card {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 16px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+      position: relative;
+    }
+    .shelter-entry-card.farther-shelter {
+      border: 1.5px dashed #a855f7;
+      background: #fdfcff;
+    }
+
+    .sec-badge-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .badge-bed {
+      background: #e7f7ec;
+      color: var(--success);
+      font-size: 12px;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .badge-bed.full {
+      background: #fee2e2;
+      color: var(--danger);
+    }
+
+    .badge-sec-tag {
+      background: #eff6ff;
+      color: #1e40af;
+      border: 1px solid #bfdbfe;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .shelter-entry-title {
+      font-size: 17px;
+      font-weight: 800;
+      color: #211c34;
+      margin: 8px 0 3px;
+    }
+
+    .shelter-actions-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    /* VIEW: LIVE SAFE MAP */
+    #view-map {
+      display: none;
+      width: 100%;
+      height: 100%;
+      position: relative;
+    }
+
+    .map-sidebar {
+      width: var(--sidebar-w);
+      min-width: 360px;
+      background: #ffffff;
+      border-right: 1px solid var(--border);
+      height: 100%;
+      overflow-y: auto;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      box-shadow: 2px 0 10px rgba(0,0,0,0.03);
+      z-index: 10;
+      flex-shrink: 0;
+    }
+
+    .map-canvas-container {
+      flex: 1;
+      height: 100%;
+      min-width: 0;
+      position: relative;
+      background: #eae6df;
+    }
+
+    #realMap {
+      width: 100% !important;
+      height: 100% !important;
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      z-index: 1;
+    }
+
+    .map-floating-guardians {
+      position: absolute;
+      bottom: 24px;
+      right: 24px;
+      z-index: 450;
+      display: flex;
+      gap: 10px;
+    }
+
+    .btn-floating-ping {
+      background: #7b2cbf;
+      color: #ffffff;
+      border: 2px solid #ffffff;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+      border-radius: 30px;
+      padding: 11px 20px;
+      font-size: 13.5px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: transform 0.12s ease;
+    }
+    .btn-floating-ping:active { transform: scale(0.96); }
+
+    .card-box {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+    }
+
+    .telemetry-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .telemetry-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #272138;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .badge-status {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 20px;
+      background: #e0f2fe;
+      color: #0369a1;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .telemetry-coords {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+      font-family: monospace;
+    }
+
+    .telemetry-btn-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .btn-act {
+      border: 1px solid var(--border);
+      background: #fbfaff;
+      color: #3b3353;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+      text-decoration: none;
+    }
+    .btn-act:hover { background: var(--primary-light); color: var(--primary); }
+    .btn-act.primary { background: var(--primary); color: #fff; border: none; }
+    .btn-act.primary:hover { background: var(--primary-dark); }
+    .btn-act.success { background: var(--success); color: #fff; border: none; }
+    .btn-act.danger { background: var(--danger); color: #fff; border: none; }
+    .btn-act.dark { background: #241442; color: #fff; border: none; }
+
+    .corridor-card {
+      border: 2px solid transparent;
+      border-radius: 12px;
+      padding: 12px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      background: #faf9fd;
+      transition: all 0.15s ease;
+    }
+    .corridor-card.active {
+      border-color: var(--primary);
+      background: #ffffff;
+      box-shadow: 0 4px 14px rgba(123, 44, 191, 0.1);
+    }
+
+    .corridor-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 4px;
+    }
+
+    .corridor-name {
+      font-size: 13px;
+      font-weight: 800;
+      color: #272138;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .score-badge {
+      font-size: 11px;
+      font-weight: 800;
+      padding: 2px 7px;
+      border-radius: 6px;
+      background: var(--primary);
+      color: #fff;
+    }
+    .score-badge.caution {
+      background: #fef3c7;
+      color: #b45309;
+    }
+
+    .corridor-metrics {
+      font-size: 17px;
+      font-weight: 800;
+      color: var(--text);
+      margin: 4px 0 6px;
+    }
+    .corridor-metrics span {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-muted);
+    }
+
+    .feature-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .pill {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 7px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: #ffffff;
+      color: #4b4461;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .btn-simulate {
+      width: 100%;
+      padding: 12px;
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 13.5px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .layers-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .layer-check {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #4b4461;
+      background: #faf9fd;
+      padding: 7px 9px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      cursor: pointer;
+    }
+
+    /* VIEW: SAFE TRANSIT */
+    .transit-layout {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 24px;
+    }
+
+    .form-group {
+      margin-bottom: 14px;
+    }
+    .form-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 6px;
+      color: #312848;
+    }
+    .form-input, .form-select {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: #fff;
+      font-size: 13.5px;
+    }
+
+    .unified-pin-card {
+      background: linear-gradient(135deg, #241442, #391c6e);
+      color: #fff;
+      border-radius: 14px;
+      padding: 22px;
+      height: fit-content;
+      margin-bottom: 18px;
+      box-shadow: 0 6px 18px rgba(36, 20, 66, 0.2);
+    }
+
+    .pin-display-unified {
+      font-size: 40px;
+      font-weight: 800;
+      letter-spacing: 6px;
+      color: #68d391;
+      margin: 10px 0;
+      font-family: monospace;
+    }
+
+    .officers-card {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px;
+      margin-bottom: 18px;
+    }
+    .officer-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .officer-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #fbfaff;
+      border: 1px solid var(--border);
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 12.5px;
+    }
+
+    .driver-details-card {
+      display: none;
+      background: #ffffff;
+      border: 2px solid #10b981;
+      border-radius: 14px;
+      padding: 20px;
+      margin-top: 18px;
+      box-shadow: 0 8px 24px rgba(16, 185, 129, 0.15);
+    }
+
+    .driver-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 12px;
+      margin-bottom: 12px;
+    }
+
+    .driver-avatar-circle {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: #f3ebfc;
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      border: 2px solid #d8b4fe;
+    }
+
+    .driver-spec-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      background: #fbfaff;
+      padding: 12px;
+      border-radius: 10px;
+      font-size: 13px;
+      margin-bottom: 12px;
+      border: 1px solid var(--border);
+    }
+
+    .officer-badge-box {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      color: #1e3a8a;
+      border-radius: 8px;
+      padding: 10px 12px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12.5px;
+    }
+
+    /* VIEW: SUPPORT & CHAT */
+    .support-grid {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 22px;
+    }
+
+    .chat-container {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      display: flex;
+      flex-direction: column;
+      height: 560px;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.04);
+      overflow: hidden;
+    }
+
+    .chat-header {
+      background: #241442;
+      color: #ffffff;
+      padding: 14px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .chat-messages {
+      flex: 1;
+      padding: 16px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      background: #fbfaff;
+    }
+
+    .chat-msg {
+      max-width: 84%;
+      padding: 11px 14px;
+      border-radius: 12px;
+      font-size: 13.5px;
+      line-height: 1.45;
+    }
+    .chat-msg.bot {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      color: #1d1b26;
+      align-self: flex-start;
+      border-bottom-left-radius: 3px;
+    }
+    .chat-msg.counselor {
+      background: #f5f3ff;
+      border: 1.5px solid #a855f7;
+      color: #2e1065;
+      align-self: flex-start;
+      border-bottom-left-radius: 3px;
+    }
+    .chat-msg.user {
+      background: var(--primary);
+      color: #ffffff;
+      align-self: flex-end;
+      border-bottom-right-radius: 3px;
+    }
+    .chat-msg.system {
+      background: #fef3c7;
+      border: 1px dashed #d97706;
+      color: #92400e;
+      align-self: center;
+      font-size: 12px;
+      text-align: center;
+      width: 90%;
+      border-radius: 8px;
+      padding: 8px 12px;
+    }
+
+    .chat-quick-options {
+      padding: 10px 14px;
+      background: #f4f1fa;
+      border-top: 1px solid var(--border);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .chip-opt {
+      background: #ffffff;
+      border: 1px solid #d4ceea;
+      color: #4b3d73;
+      padding: 5px 11px;
+      border-radius: 14px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .chip-opt:hover {
+      background: var(--primary);
+      color: #ffffff;
+      border-color: var(--primary);
+    }
+
+    .chat-input-bar {
+      display: flex;
+      padding: 10px 14px;
+      background: #ffffff;
+      border-top: 1px solid var(--border);
+      gap: 8px;
+    }
+
+    .chat-input {
+      flex: 1;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 9px 12px;
+      font-size: 13.5px;
+      outline: none;
+    }
+
+    /* VIEW: ADMIN CAPACITY MATRIX */
+    .admin-matrix-card {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 20px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.03);
+    }
+
+    .admin-table-wrap {
+      overflow-x: auto;
+      margin-top: 14px;
+    }
+
+    .admin-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 13.5px;
+    }
+
+    .admin-table th {
+      background: #f8f6fc;
+      padding: 12px 14px;
+      color: #3b3353;
+      font-weight: 700;
+      border-bottom: 2px solid var(--border);
+      white-space: nowrap;
+    }
+
+    .admin-table td {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+      color: #272138;
+    }
+
+    .stepper-control {
+      display: inline-flex;
+      align-items: center;
+      background: #f4f2f9;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+
+    .step-btn {
+      background: #fff;
+      border: none;
+      width: 28px;
+      height: 28px;
+      font-size: 14px;
+      font-weight: 800;
+      color: #3b3353;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .step-btn:hover { background: var(--primary-light); color: var(--primary); }
+
+    .step-val {
+      min-width: 32px;
+      text-align: center;
+      font-weight: 700;
+      font-size: 13.5px;
+    }
+
+    .status-tag {
+      font-size: 12px;
+      font-weight: 700;
+      padding: 3px 9px;
+      border-radius: 6px;
+      display: inline-block;
+    }
+    .status-tag.open { background: #dcfce7; color: #15803d; }
+    .status-tag.limited { background: #fef3c7; color: #b45309; }
+    .status-tag.full { background: #fee2e2; color: #b91c1c; }
+
+    /* VIEW: TOOLS */
+    .tools-catalog {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+    }
+
+    .tool-box {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    /* VIEW: GUARDIANS */
+    .guardian-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .guardian-item {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    /* MODALS */
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(18, 14, 27, 0.7);
+      backdrop-filter: blur(4px);
+      justify-content: center;
+      align-items: center;
+      z-index: 5000;
+      padding: 16px;
+    }
+
+    .generic-dialog {
+      background: #ffffff;
+      border-radius: 20px;
+      max-width: 440px;
+      width: 100%;
+      padding: 26px;
+      text-align: center;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+    }
+
+    .sos-icon-circle {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: #fee2e2;
+      color: var(--danger);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 30px;
+      margin: 0 auto 14px;
+    }
+
+    .telemetry-terminal {
+      background: #fdf2f2;
+      border: 1px solid #fecaca;
+      border-radius: 10px;
+      padding: 12px 14px;
+      font-family: monospace;
+      font-size: 12px;
+      text-align: left;
+      margin: 16px 0;
+      line-height: 1.6;
+      color: #7f1d1d;
+    }
+
+    #visualStrobe {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; width: 100vw; height: 100vh;
+      z-index: 9999;
+      cursor: pointer;
+    }
+    .strobe-flashing {
+      display: block !important;
+      animation: strobeFrames 0.12s infinite;
+    }
+    @keyframes strobeFrames {
+      0% { background: #ffffff; }
+      50% { background: #d90429; }
+      100% { background: #000000; }
+    }
+
+    #portalToast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(30px);
+      background: #191426;
+      color: #fff;
+      padding: 10px 22px;
+      border-radius: 30px;
+      font-size: 13.5px;
+      font-weight: 500;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.2s ease;
+      z-index: 6000;
+      white-space: nowrap;
+    }
+    #portalToast.shown {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    @keyframes pulseRing {
+      0% { transform: scale(0.95); opacity: 0.8; }
+      50% { transform: scale(1.3); opacity: 0.2; }
+      100% { transform: scale(0.95); opacity: 0.8; }
+    }
+
+    @media (max-width: 880px) {
+      .portal-body { flex-direction: column; height: auto; overflow-y: auto; }
+      #view-map { flex-direction: column-reverse; height: auto; }
+      .map-sidebar { width: 100%; min-width: 100%; height: auto; }
+      .map-canvas-container { width: 100%; height: 420px; }
+      #realMap { position: relative; height: 420px !important; }
+      .transit-layout, .support-grid { grid-template-columns: 1fr; }
+      .map-floating-guardians { bottom: 14px; right: 14px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- PERSONA 1: CALCULATOR -->
+  <div id="calculator-persona">
+    <div class="calc-top-bar">
+      <span>Standard</span>
+      <span>Rad | DEG</span>
+    </div>
+
+    <div style="color: #605c75; font-size: 11.5px; text-align: center; margin-bottom: 8px;">
+      Stealth Passcode: <strong id="calcHelpCode">98.6+=</strong> or <strong id="calcAltCode">999=</strong>
+    </div>
+
+    <div class="calc-screen">
+      <div class="calc-history" id="calcHistory">&nbsp;</div>
+      <div class="calc-val" id="calcDisplay">0</div>
+    </div>
+
+    <div class="calc-grid">
+      <button class="c-btn fn" onclick="calcAction('C')">AC</button>
+      <button class="c-btn fn" onclick="calcAction('+/-')">±</button>
+      <button class="c-btn fn" onclick="calcAction('%')">%</button>
+      <button class="c-btn op" onclick="calcAction('/')">÷</button>
+
+      <button class="c-btn" onclick="calcInput('7')">7</button>
+      <button class="c-btn" onclick="calcInput('8')">8</button>
+      <button class="c-btn" onclick="calcInput('9')">9</button>
+      <button class="c-btn op" onclick="calcAction('*')">×</button>
+
+      <button class="c-btn" onclick="calcInput('4')">4</button>
+      <button class="c-btn" onclick="calcInput('5')">5</button>
+      <button class="c-btn" onclick="calcInput('6')">6</button>
+      <button class="c-btn op" onclick="calcAction('-')">−</button>
+
+      <button class="c-btn" onclick="calcInput('1')">1</button>
+      <button class="c-btn" onclick="calcInput('2')">2</button>
+      <button class="c-btn" onclick="calcInput('3')">3</button>
+      <button class="c-btn op" onclick="calcAction('+')">+</button>
+
+      <button class="c-btn span-2" onclick="calcInput('0')">0</button>
+      <button class="c-btn" onclick="calcInput('.')">.</button>
+      <button class="c-btn op" onclick="calcAction('=')">=</button>
+    </div>
+  </div>
+
+  <!-- PERSONA 2: COMMAND PORTAL -->
+  <div id="haven-persona">
+    <div class="top-strip">
+      <div class="top-strip-left">
+        <span style="display:inline-block;width:8px;height:8px;background:#10b981;border-radius:50%;"></span>
+        <span id="topBarGPSStatus">GPS Active & Connected</span>
+        <span style="color:#726b8a;">| Escort Network: <strong>Online</strong></span>
+        <button class="btn-stealth-pass" onclick="openPasscodeModal()">⚙ Stealth Code: <span id="lblPasscodeDisplay">98.6+=</span></button>
+      </div>
+      <div class="top-strip-actions">
+        <button class="btn-disguise" onclick="triggerScrub()">🖩 Disguise</button>
+        <button class="btn-stealth-exit" onclick="triggerScrub()">➜] Quick Exit</button>
+      </div>
+    </div>
+
+    <nav class="portal-nav">
+      <div class="logo-container">
+        <div class="logo-badge">🛡️</div>
+        <div class="brand-title">HerHorizon <span class="brand-tag">SafeRoute</span></div>
+      </div>
+
+      <div class="nav-tabs">
+        <button class="nav-tab-btn active" onclick="showPortalTab('view-shelters', this)">🏠 Safe Shelters</button>
+        <button class="nav-tab-btn" onclick="showPortalTab('view-map', this)">📍 Live Safe Map</button>
+        <button class="nav-tab-btn" onclick="showPortalTab('view-transit', this)">🚗 Safe Transit & Pass</button>
+        <button class="nav-tab-btn" onclick="showPortalTab('view-support', this)">💬 Support #802</button>
+        <button class="nav-tab-btn" onclick="showPortalTab('view-tools', this)">🛡️ Safety Tools</button>
+        <button class="nav-tab-btn" onclick="showPortalTab('view-guardians', this)">👥 Guardians</button>
+        <button class="nav-tab-btn admin-link" onclick="showPortalTab('view-admin', this)">⚙ Shelter Admin</button>
+        <button class="btn-sos" onclick="openSOSDialog()">🆘 SOS</button>
+      </div>
+    </nav>
+
+    <main class="portal-body">
+
+      <!-- TAB 1: SAFE SHELTERS DIRECTORY -->
+      <section id="view-shelters" class="standalone-view" style="display:block;">
+        <div class="content-constraint">
+          <div class="network-summary-banner">
+            <div>
+              <div style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:#cbd5e1;font-weight:700;">
+                Live Municipal Safe Haven Network
+              </div>
+              <h2 style="font-size:22px;font-weight:800;color:#ffffff;margin-top:2px;">
+                Real-Time Shelter Bed Directory
+              </h2>
+            </div>
+            <div class="net-stats-row">
+              <div class="net-stat-item">
+                <span class="net-stat-num" id="statOpenBeds">32</span>
+                <span class="net-stat-label">Beds Open Now</span>
+              </div>
+              <div class="net-stat-item">
+                <span class="net-stat-num" style="color:#60a5fa;" id="statFamilyUnits">11</span>
+                <span class="net-stat-label">Family Units Free</span>
+              </div>
+              <div class="net-stat-item">
+                <span class="net-stat-num" style="color:#34d399;">LIVE</span>
+                <span class="net-stat-label">Network Online</span>
+              </div>
+              <button class="btn-act primary" style="background:#fff;color:var(--primary);font-weight:700;" onclick="openTransitPassModal()">
+                🎫 Free Rideshare Voucher
+              </button>
+            </div>
+          </div>
+
+          <div class="shelter-filters">
+            <button class="filter-chip active" id="chipAvailableShelters" onclick="toggleShelterScope('available', this)">
+              🏛️ Available Shelters
+            </button>
+            <button class="filter-chip" id="chipAllHavens" onclick="toggleShelterScope('all', this)">
+              🌐 All Safe Havens (Show More Shelters)
+            </button>
+            <span style="border-left:1px solid #dcd7ea;height:24px;margin:0 4px;"></span>
+            <button class="filter-chip" onclick="filterShelterTag('women', this)">👩 Women Only</button>
+            <button class="filter-chip" onclick="filterShelterTag('kids', this)">👶 Women & Kids</button>
+            <button class="filter-chip" onclick="filterShelterTag('pets', this)">🐾 Pets Welcome</button>
+            <button class="filter-chip" onclick="filterShelterTag('accessible', this)">♿ Barrier Free</button>
+          </div>
+
+          <div class="shelter-cards-grid" id="shelterListingGrid"></div>
+        </div>
+      </section>
+
+      <!-- TAB 2: LIVE SAFE MAP -->
+      <section id="view-map">
+        <aside class="map-sidebar">
+          <div class="card-box">
+            <div class="telemetry-header">
+              <span class="telemetry-title">🧭 AUTO-DETECT LOCATION</span>
+              <span class="badge-status" id="gpsModeBadge">
+                <span style="display:inline-block;width:6px;height:6px;background:#0284c7;border-radius:50%;"></span>
+                Streaming Satellites
+              </span>
+            </div>
+            <div class="telemetry-coords">
+              <div>Latitude: <strong id="lblLat">Streaming...</strong></div>
+              <div>Longitude: <strong id="lblLng">Streaming...</strong></div>
+              <div>Accuracy Radius: <span style="color:var(--success);font-weight:700;" id="lblAcc">Acquiring Fix...</span></div>
+            </div>
+            <div class="telemetry-btn-row">
+              <button class="btn-act primary" onclick="forceGPSRefresh()">✈ Refresh GPS</button>
+              <button class="btn-act" onclick="centerOnUser()">⌖ Center Me</button>
+            </div>
+            <div style="font-size:11.5px;color:var(--text-muted);display:flex;justify-content:space-between;margin-top:4px;">
+              <span>No outdoor fix?</span>
+              <a href="javascript:void(0)" style="color:var(--primary);font-weight:700;" onclick="loadSampleKalyanCoords()">Load City Mesh</a>
+            </div>
+          </div>
+
+          <!-- WALKING SAFER ROUTE CONTROLS -->
+          <div class="card-box" style="border-left: 4px solid var(--primary);">
+            <div style="font-size:11px;font-weight:800;color:var(--primary);text-transform:uppercase;margin-bottom:4px;">
+              Active Mode: Walk to Safe Shelter
+            </div>
+            <h3 style="font-size:14px;font-weight:800;margin-bottom:4px;" id="lblWalkTargetShelter">Target: Emergency Refugee Sanctuary</h3>
+            <p style="font-size:12px;color:var(--text-muted);margin-bottom:10px;">
+              Following 100% Streetlit Horizon Corridor with verified camera checkpoints.
+            </p>
+            <button class="btn-simulate" id="btnSimulate" onclick="toggleMovementSimulation()">
+              ⏸ Walking Escort Simulation Running...
+            </button>
+            <button class="btn-act success" style="width:100%;margin-top:8px;padding:9px;font-size:12.5px;" onclick="broadcastCurrentCoordsToGuardians()">
+              📡 Send Exact Coordinates to Guardians
+            </button>
+          </div>
+
+          <div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+              <span style="font-size:12px;font-weight:800;color:#352e49;text-transform:uppercase;letter-spacing:0.5px;">Corridor Routes</span>
+              <span style="font-size:11px;font-weight:700;color:var(--success);background:#e7f7ed;padding:2px 6px;border-radius:4px;">Live Auto-Route</span>
+            </div>
+
+            <div class="corridor-card active" id="cardCorridorSafe" onclick="selectCorridor('safe')">
+              <div class="corridor-header">
+                <span class="corridor-name">Safe Horizon Corridor</span>
+                <span class="score-badge">98% Safety Score</span>
+              </div>
+              <div class="corridor-metrics" id="safeCorridorTime">12 min <span id="safeCorridorDist">(1.2 km)</span></div>
+              <div class="feature-pills">
+                <span class="pill">☀️ 100% Streetlit</span>
+                <span class="pill">📹 Active CCTV</span>
+                <span class="pill">🛡️ Guard Kiosks</span>
+              </div>
+            </div>
+
+            <div class="corridor-card" id="cardCorridorDirect" onclick="selectCorridor('direct')">
+              <div class="corridor-header">
+                <span class="corridor-name">Direct Shortcut</span>
+                <span class="score-badge caution">Unlit Alleys</span>
+              </div>
+              <div class="corridor-metrics" id="directCorridorTime">8 min <span id="directCorridorDist">(1.0 km)</span></div>
+              <p style="font-size:12px;color:var(--text-muted);line-height:1.4;">
+                Shorter path, but traverses unlit alleys without verified cameras.
+              </p>
+            </div>
+          </div>
+
+          <div>
+            <span style="font-size:12px;font-weight:800;color:#352e49;text-transform:uppercase;">Map Layers</span>
+            <div class="layers-grid">
+              <label class="layer-check">
+                <input type="checkbox" id="chkShelters" checked onchange="toggleLayer('shelters')" /> 🏠 Shelters
+              </label>
+              <label class="layer-check">
+                <input type="checkbox" id="chkGuards" checked onchange="toggleLayer('guards')" /> 👮 Police/Guards
+              </label>
+              <label class="layer-check">
+                <input type="checkbox" id="chkCorridors" checked onchange="toggleLayer('corridors')" /> 💡 Lit Corridors
+              </label>
+              <label class="layer-check">
+                <input type="checkbox" id="chkRadius" checked onchange="toggleLayer('radius')" /> 📡 GPS Accuracy
+              </label>
+            </div>
+          </div>
+        </aside>
+
+        <div class="map-canvas-container">
+          <div id="realMap"></div>
+
+          <div class="map-floating-guardians">
+            <button class="btn-floating-ping" onclick="broadcastCurrentCoordsToGuardians()">
+              <span style="font-size:18px;">📡</span>
+              <span>Send Exact Coordinates to Guardians</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 3: SAFE TRANSIT & PASS -->
+      <section id="view-transit" class="standalone-view">
+        <div class="content-constraint">
+          <div class="view-title-block">
+            <h2>Discreet Safe Transit & Municipal Pass</h2>
+            <p>Direct vehicle dispatch with single PIN security, route patrol officers, and nearby officer verification.</p>
+          </div>
+
+          <div class="transit-layout">
+            <div class="card-box">
+              <h3 style="font-size: 16px; margin-bottom: 14px;">📍 Dispatch Request (Auto-Detect Start)</h3>
+
+              <div class="form-group">
+                <label class="form-label">Current GPS Pickup Point</label>
+                <input class="form-input" id="txPickupPoint" readonly value="Streaming Coordinates..." />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Target Safe Shelter Drop-Off</label>
+                <select class="form-select" id="txDestinationSelect" onchange="onDestinationChanged()"></select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Discreet Options</label>
+                <div style="display: flex; gap: 16px;">
+                  <label style="font-size: 13px; display: flex; align-items: center; gap: 6px;">
+                    <input type="checkbox" checked id="chkUnmarked" /> 🚗 Unmarked Civilian Vehicle
+                  </label>
+                  <label style="font-size: 13px; display: flex; align-items: center; gap: 6px;">
+                    <input type="checkbox" checked id="chkSilent" /> 🔇 Silent Approach (No horn/flashers)
+                  </label>
+                </div>
+              </div>
+
+              <button class="btn-act dark" style="width: 100%; padding: 13px; font-size: 14.5px; font-weight: 700;" onclick="dispatchSafeTransit()">
+                🚗 Request & Verify Safe Ride Now
+              </button>
+
+              <!-- VERIFIED DRIVER & NEARBY OFFICER DETAILS -->
+              <div class="driver-details-card" id="driverDetailsCard">
+                <div class="driver-card-header">
+                  <div style="display:flex;align-items:center;gap:12px;">
+                    <div class="driver-avatar-circle">🛡️</div>
+                    <div>
+                      <h4 style="font-size:16px;font-weight:800;color:#181226;" id="drvName">Officer Aarav Patel (Vetted Driver)</h4>
+                      <span style="font-size:11.5px;color:var(--success);font-weight:700;">● Verified Background Check & City Escort Badge</span>
+                    </div>
+                  </div>
+                  <div style="text-align:right;">
+                    <span style="font-size:11px;background:#e7f7ed;color:var(--success);font-weight:800;padding:3px 8px;border-radius:6px;">DISPATCH VERIFIED</span>
+                    <div style="font-size:13px;font-weight:800;color:#181226;margin-top:2px;">ETA: 4 mins</div>
+                  </div>
+                </div>
+
+                <div class="driver-spec-grid">
+                  <div>Vehicle: <strong id="drvVehicle">Silver Toyota Corolla (Civilian Masked)</strong></div>
+                  <div>Plate Number: <strong id="drvPlate">MH-04-EK-9481</strong></div>
+                  <div>Driver Badge: <strong>#MUN-SEC-8821</strong></div>
+                  <div>Driver Rating: <strong>⭐ 4.98 (640+ Safe Rides)</strong></div>
+                </div>
+
+                <div class="officer-badge-box">
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <span style="font-size:18px;">👮</span>
+                    <div>
+                      <strong>Ride Verified by Nearby Officer:</strong> Inspector R. Nair (Badge #POL-4412)
+                      <div style="font-size:11.5px;color:#1d4ed8;">Stationed at Central Dadar Perimeter Checkpoint</div>
+                    </div>
+                  </div>
+                  <span style="font-size:11px;background:#dbeafe;color:#1e40af;font-weight:700;padding:3px 7px;border-radius:6px;">VERIFIED SAFE</span>
+                </div>
+
+                <div style="background:#241442;color:#ffffff;border-radius:10px;padding:14px;text-align:center;">
+                  <div style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:#cbd5e1;">Your Single Security Verification PIN</div>
+                  <div class="pin-display-unified" id="driverSpokenPin">8392</div>
+                  <div style="font-size:12.5px;color:#d1c7eb;line-height:1.4;">
+                    <strong>Security Rule:</strong> Only enter after the driver verbally states this PIN to you.
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <div class="unified-pin-card">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <span style="font-size: 12px; font-weight: 800; text-transform: uppercase;">Mutual Security Code</span>
+                  <span style="background: rgba(255,255,255,0.15); padding: 2px 8px; border-radius: 6px; font-size: 11px;">Single PIN</span>
+                </div>
+
+                <div style="font-size: 13px; margin-top: 14px; opacity: 0.85;">Your Single Passenger & Driver PIN:</div>
+                <div class="pin-display-unified" id="unifiedPIN">7419</div>
+
+                <p style="font-size: 12.5px; line-height: 1.5; opacity: 0.9;">
+                  <strong>Single PIN Authentication:</strong> Driver and passenger share this one secure matching token. No dual pins needed.
+                </p>
+              </div>
+
+              <div class="officers-card">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                  <strong style="font-size:14px;color:#181226;">👮 Officers at Periphery & Route</strong>
+                  <span style="font-size:11px;color:var(--success);font-weight:700;background:#e7f7ec;padding:2px 6px;border-radius:4px;">3 Active</span>
+                </div>
+                <div class="officer-list" id="routeOfficerList">
+                  <div class="officer-item">
+                    <div>
+                      <strong>Officer K. Sharma</strong> (Sector 3 Kiosk)
+                      <div style="color:var(--text-muted);font-size:11px;">Periphery Guard • Radio Ch. 4</div>
+                    </div>
+                    <span style="font-size:11px;font-weight:700;color:var(--success);">● On Post</span>
+                  </div>
+                  <div class="officer-item">
+                    <div>
+                      <strong>Officer S. Deshmukh</strong> (West Corridor)
+                      <div style="color:var(--text-muted);font-size:11px;">Mobile Escort Patrol • Unit 12</div>
+                    </div>
+                    <span style="font-size:11px;font-weight:700;color:var(--secondary);">● Patrolling</span>
+                  </div>
+                  <div class="officer-item">
+                    <div>
+                      <strong>Inspector R. Nair</strong> (North Gate)
+                      <div style="color:var(--text-muted);font-size:11px;">Checkpoint Supervisor • Badge #POL-4412</div>
+                    </div>
+                    <span style="font-size:11px;font-weight:700;color:var(--success);">● Active Verification</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 4: SUPPORT (REAL CALL/SMS TRIGGER & COUNSELOR ASSIGNMENT SIMULATION) -->
+      <section id="view-support" class="standalone-view">
+        <div class="content-constraint">
+          <div class="view-title-block">
+            <h2>Confidential Support & Assistance</h2>
+            <p>Direct phone handoffs, native SMS triggers, trauma specialist matching, and free transit ride booking.</p>
+          </div>
+
+          <div class="support-grid">
+            <div class="chat-container">
+              <div class="chat-header">
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <span style="width:10px;height:10px;background:#10b981;border-radius:50%;"></span>
+                  <div>
+                    <div style="font-weight:700;font-size:14px;" id="chatTitle">Support Desk #802</div>
+                    <div style="font-size:11px;color:#cbd5e1;" id="chatSubStatus">System Ready • Automated Triage</div>
+                  </div>
+                </div>
+                <button class="btn-act" style="padding:4px 8px;font-size:11px;background:rgba(255,255,255,0.15);color:#fff;border:none;" onclick="resetChat()">Clear</button>
+              </div>
+
+              <div class="chat-messages" id="chatMsgContainer">
+                <div class="chat-msg bot">
+                  Hello. You are connected directly to confidential support. You are in a safe, encrypted space. How can we assist your safety right now?
+                </div>
+              </div>
+
+              <div class="chat-quick-options">
+                <button class="chip-opt" onclick="sendQuickChatMessage('I need immediate emergency bed reservation.')">🛏️ Reserve Bed</button>
+                <button class="chip-opt" onclick="sendQuickChatMessage('Request a free safe transit rideshare voucher.')">🎫 Free Ride Voucher</button>
+                <button class="chip-opt" onclick="sendQuickChatMessage('Connect me to 24/7 trauma counselor on Line #802.')">🫂 Assign Counselor</button>
+                <button class="chip-opt" onclick="triggerNativePhoneCall('8025550199', 'Support Line #802')">📞 Call Line #802 (Phone App)</button>
+              </div>
+
+              <div class="chat-input-bar">
+                <input type="text" class="chat-input" id="supportChatInput" placeholder="Type confidential message..." onkeydown="if(event.key==='Enter') submitChatMessage()" />
+                <button class="btn-act primary" style="padding:8px 14px;" onclick="submitChatMessage()">Send</button>
+              </div>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:16px;">
+              <!-- CUSTOMER LINE #802 (OPENS DIALER) -->
+              <div class="card-box" style="border-left:4px solid var(--primary);background:#fcfaff;">
+                <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+                  <div style="width:36px;height:36px;background:#f3ebfc;color:var(--primary);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;">☎️</div>
+                  <div>
+                    <h3 style="font-size:15px;font-weight:800;">Customer Line #802 (Direct Dialer)</h3>
+                    <p style="font-size:12px;color:var(--text-muted);">24/7 Dedicated Trauma-Informed Hotline</p>
+                  </div>
+                </div>
+                <p style="font-size:13px;color:#4b4461;margin-bottom:12px;line-height:1.45;">
+                  Tapping below will open your device's native phone calling app directly with Line #802 queued.
+                </p>
+                <button class="btn-act primary" style="width:100%;padding:11px;" onclick="triggerNativePhoneCall('8025550199', 'Line #802 Trauma Support')">
+                  📞 Open Calling App (Call #802)
+                </button>
+              </div>
+
+              <!-- BOOK FREE RIDE -->
+              <div class="card-box" style="border-left:4px solid var(--success);">
+                <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+                  <div style="width:36px;height:36px;background:#e7f7ec;color:var(--success);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;">🚗</div>
+                  <div>
+                    <h3 style="font-size:15px;font-weight:800;">Book Free Safe Ride</h3>
+                    <p style="font-size:12px;color:var(--text-muted);">Subsidized Municipal Voucher Pass</p>
+                  </div>
+                </div>
+                <p style="font-size:13px;color:#4b4461;margin-bottom:12px;line-height:1.45;">
+                  Instantly book a discreet, zero-cost transit vehicle to your chosen safe haven with masked civilian receipts.
+                </p>
+                <button class="btn-act success" style="width:100%;padding:11px;" onclick="bookFreeRideFromSupport()">
+                  🎟️ Book Free Ride Pass Now
+                </button>
+              </div>
+
+              <!-- SMS HELPLINE (OPENS MESSAGING APP) -->
+              <div class="card-box">
+                <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+                  <div style="width:36px;height:36px;background:#e0f2fe;color:#0284c7;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;">💬</div>
+                  <div>
+                    <h3 style="font-size:15px;font-weight:800;">SMS Helpline (Native Messaging App)</h3>
+                    <p style="font-size:12px;color:var(--text-muted);">Pre-populated discreet text trigger</p>
+                  </div>
+                </div>
+                <p style="font-size:13px;color:#4b4461;margin-bottom:12px;line-height:1.45;">
+                  Tapping below will immediately open your phone's native text messaging application with recipient <strong>802-555-0199</strong>.
+                </p>
+                <button class="btn-act" style="width:100%;padding:11px;" onclick="triggerNativeSMS('8025550199', 'SAFE: Requesting immediate quiet assistance.')">
+                  ✉ Open Texting App (SMS 802-555-0199)
+                </button>
+              </div>
+
+              <!-- EMERGENCY SILENT BEACON -->
+              <div class="card-box" style="border-left:4px solid var(--danger);">
+                <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+                  <div style="width:36px;height:36px;background:#fee2e2;color:var(--danger);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;">🚨</div>
+                  <div>
+                    <h3 style="font-size:15px;font-weight:800;">Emergency Silent Beacon</h3>
+                    <p style="font-size:12px;color:var(--text-muted);">Quiet distress broadcast with zero sound</p>
+                  </div>
+                </div>
+                <button class="btn-act danger" style="width:100%;padding:11px;" onclick="sendSilentBeacon()">
+                  ((•)) Trigger Emergency Silent Beacon
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 5: SAFETY TOOLS -->
+      <section id="view-tools" class="standalone-view">
+        <div class="content-constraint">
+          <div class="view-title-block">
+            <h2>Deterrent & Immediate Safety Tools</h2>
+            <p>Passcode stealth settings, live coordinate broadcast, audio alarms, visual strobes, and decoys.</p>
+          </div>
+
+          <div class="tools-catalog">
+            <div class="tool-box" style="border-top:4px solid var(--primary);">
+              <div>
+                <div style="width:44px;height:44px;background:var(--primary-light);color:var(--primary);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:12px;">🔑</div>
+                <h3 style="font-size:16px;margin-bottom:6px;">Set Custom Stealth Passcode</h3>
+                <p style="font-size:13px;color:var(--text-muted);line-height:1.4;">
+                  Configure your secret calculator code sequence (current: <strong id="lblToolPasscode">98.6+=</strong>) to unlock HerHorizon.
+                </p>
+              </div>
+              <button class="btn-act primary" onclick="openPasscodeModal()">
+                ⚙ Configure Custom Passcode
+              </button>
+            </div>
+
+            <div class="tool-box" style="border-top:4px solid var(--success);">
+              <div>
+                <div style="width:44px;height:44px;background:#e7f7ec;color:var(--success);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:12px;">📡</div>
+                <h3 style="font-size:16px;margin-bottom:6px;">Send Guardians Exact Coordinates</h3>
+                <p style="font-size:13px;color:var(--text-muted);line-height:1.4;">
+                  Immediately broadcast hardware GPS coordinates to your saved trusted guardians circle with one tap.
+                </p>
+              </div>
+              <button class="btn-act success" onclick="broadcastCurrentCoordsToGuardians()">
+                📡 Dispatch GPS Node Now
+              </button>
+            </div>
+
+            <div class="tool-box">
+              <div>
+                <div style="width:44px;height:44px;background:#fee2e2;color:var(--danger);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:12px;">📢</div>
+                <h3 style="font-size:16px;margin-bottom:6px;">Audio Alarm Siren</h3>
+                <p style="font-size:13px;color:var(--text-muted);line-height:1.4;">
+                  Dual-frequency synthesized loud alert to attract immediate bystanders and deter threats.
+                </p>
+              </div>
+              <button class="btn-act" style="background:var(--danger);color:#fff;border:none;" onclick="toggleSirenSound()">
+                🔊 Toggle Siren Sound
+              </button>
+            </div>
+
+            <div class="tool-box">
+              <div>
+                <div style="width:44px;height:44px;background:#fef3c7;color:#b45309;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:12px;">⚡</div>
+                <h3 style="font-size:16px;margin-bottom:6px;">Visual Screen Strobe</h3>
+                <p style="font-size:13px;color:var(--text-muted);line-height:1.4;">
+                  High-contrast flashing display to disorient attackers or signal position to emergency personnel.
+                </p>
+              </div>
+              <button class="btn-act" style="background:#b45309;color:#fff;border:none;" onclick="triggerVisualStrobe()">
+                ⚡ Start Visual Strobe
+              </button>
+            </div>
+
+            <div class="tool-box">
+              <div>
+                <div style="width:44px;height:44px;background:#e0f2fe;color:#0284c7;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:12px;">📞</div>
+                <h3 style="font-size:16px;margin-bottom:6px;">Fake Diversion Call</h3>
+                <p style="font-size:13px;color:var(--text-muted);line-height:1.4;">
+                  Realistic incoming call modal with synthesized voice response to help excuse yourself discreetly.
+                </p>
+              </div>
+              <button class="btn-act primary" onclick="scheduleFakeCall()">
+                📞 Call Me in 3 Seconds
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 6: GUARDIANS (DIRECT DIALER & MESSAGING APP) -->
+      <section id="view-guardians" class="standalone-view">
+        <div class="content-constraint">
+          <div class="view-title-block">
+            <h2>Trusted Circle Guardians</h2>
+            <p>Real-time guardian activity statuses, immediate native phone call launches, and encrypted coordinate sharing.</p>
+          </div>
+
+          <div class="card-box" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <div>
+              <strong style="font-size: 15px;">📡 Live GPS Status Ping</strong>
+              <div style="font-size: 13px; color: var(--text-muted);" id="guardianPingPreview">
+                Streaming GPS status...
+              </div>
+            </div>
+            <button class="btn-act primary" onclick="broadcastCurrentCoordsToGuardians()">Send Ping to All</button>
+          </div>
+
+          <div style="font-size: 13px; font-weight: 800; text-transform: uppercase; color: #352e49;">
+            Saved Guardians Dossier (3)
+          </div>
+
+          <div class="guardian-list">
+            <!-- GUARDIAN 1 -->
+            <div class="guardian-item">
+              <div style="display: flex; align-items: center; gap: 14px;">
+                <div style="width: 44px; height: 44px; border-radius: 50%; background: #e9d5ff; color: var(--primary); font-weight: 800; display: flex; align-items: center; justify-content: center; font-size:16px;">ML</div>
+                <div>
+                  <div style="display:flex;align-items:center;gap:6px;">
+                    <strong style="font-size:15px;">Maya Lin</strong>
+                    <span style="font-size: 11px; background: #f3e8ff; color: var(--primary); padding: 2px 6px; border-radius: 4px; font-weight:700;">Sister</span>
+                  </div>
+                  <div style="font-size: 12.5px; color: var(--text-muted); margin-top:2px;">
+                    Contact: <strong>+1 (555) 349-2918</strong>
+                  </div>
+                  <div style="font-size: 12px; color: var(--success); font-weight:700; margin-top:3px;">
+                    ● Activity Status: Active Now (Listening)
+                  </div>
+                </div>
+              </div>
+              <div style="display:flex;gap:8px;">
+                <button class="btn-act success" onclick="triggerNativePhoneCall('5553492918', 'Maya Lin')">📞 Call</button>
+                <button class="btn-act" onclick="triggerNativeSMS('5553492918', 'HerHorizon Ping: I am currently on the designated safe corridor.')">✉ Text</button>
+              </div>
+            </div>
+
+            <!-- GUARDIAN 2 -->
+            <div class="guardian-item">
+              <div style="display: flex; align-items: center; gap: 14px;">
+                <div style="width: 44px; height: 44px; border-radius: 50%; background: #e9d5ff; color: var(--primary); font-weight: 800; display: flex; align-items: center; justify-content: center; font-size:16px;">EV</div>
+                <div>
+                  <div style="display:flex;align-items:center;gap:6px;">
+                    <strong style="font-size:15px;">Elena Vance</strong>
+                    <span style="font-size: 11px; background: #f3e8ff; color: var(--primary); padding: 2px 6px; border-radius: 4px; font-weight:700;">Trusted Advocate</span>
+                  </div>
+                  <div style="font-size: 12.5px; color: var(--text-muted); margin-top:2px;">
+                    Contact: <strong>+1 (555) 782-9011</strong>
+                  </div>
+                  <div style="font-size: 12px; color: var(--success); font-weight:700; margin-top:3px;">
+                    ● Activity Status: Online (Ready to respond)
+                  </div>
+                </div>
+              </div>
+              <div style="display:flex;gap:8px;">
+                <button class="btn-act success" onclick="triggerNativePhoneCall('5557829011', 'Elena Vance')">📞 Call</button>
+                <button class="btn-act" onclick="triggerNativeSMS('5557829011', 'HerHorizon Ping: Location stream updated.')">✉ Text</button>
+              </div>
+            </div>
+
+            <!-- GUARDIAN 3 -->
+            <div class="guardian-item">
+              <div style="display: flex; align-items: center; gap: 14px;">
+                <div style="width: 44px; height: 44px; border-radius: 50%; background: #e0f2fe; color: #0284c7; font-weight: 800; display: flex; align-items: center; justify-content: center; font-size:16px;">CR</div>
+                <div>
+                  <div style="display:flex;align-items:center;gap:6px;">
+                    <strong style="font-size:15px;">City Safe Patrol Desk</strong>
+                    <span style="font-size: 11px; background: #e0f2fe; color: #0369a1; padding: 2px 6px; border-radius: 4px; font-weight:700;">Escort Unit</span>
+                  </div>
+                  <div style="font-size: 12.5px; color: var(--text-muted); margin-top:2px;">
+                    Contact: <strong>+1 (802) 555-0100</strong>
+                  </div>
+                  <div style="font-size: 12px; color: var(--secondary); font-weight:700; margin-top:3px;">
+                    ● Activity Status: Standby Unit Dispatched
+                  </div>
+                </div>
+              </div>
+              <div style="display:flex;gap:8px;">
+                <button class="btn-act success" onclick="triggerNativePhoneCall('8025550100', 'City Safe Patrol Desk')">📞 Call</button>
+                <button class="btn-act" onclick="triggerNativeSMS('8025550100', 'Escort Unit Notification: User coordinates transmitted.')">✉ Text</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 7: SHELTER ADMIN -->
+      <section id="view-admin" class="standalone-view">
+        <div class="content-constraint">
+          <div class="view-title-block">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+              <h2>Shelter Staff Admin Dashboard</h2>
+              <span class="badge-status" style="background:#dcfce7;color:#15803d;">Online Active Sync</span>
+            </div>
+            <p>Live synchronized capacity matrix for nearby and farther shelters. Controls are dedicated strictly to required beds and family units; everything else automatically syncs.</p>
+          </div>
+
+          <div class="admin-matrix-card">
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+              <h3 style="font-size:16px;font-weight:800;">Shelter Capacity Matrix (Nearby & Farther Locations)</h3>
+              <button class="btn-act primary" style="font-size:12px;padding:6px 12px;" onclick="syncAdminData()">
+                🔄 Live Sync All
+              </button>
+            </div>
+
+            <div class="admin-table-wrap">
+              <table class="admin-table">
+                <thead>
+                  <tr>
+                    <th>Shelter Name & Distance</th>
+                    <th>Area Type</th>
+                    <th>Required Individual Beds</th>
+                    <th>Family Units</th>
+                    <th>Live Network Status</th>
+                    <th>Auto-Relocation Action</th>
+                  </tr>
+                </thead>
+                <tbody id="adminMatrixBody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="card-box" style="border-left:4px solid #a855f7;">
+            <h4 style="font-size:14px;font-weight:800;color:#241442;margin-bottom:6px;">
+              🚗 Farther Shelters Relocation Protocol
+            </h4>
+            <p style="font-size:13px;color:var(--text-muted);line-height:1.45;margin-bottom:10px;">
+              When nearby shelters are fully occupied, the system automatically unlocks guaranteed safe rides to farther verified havens. Riders receive complete vehicle and driver details plus sponsored free vouchers.
+            </p>
+            <button class="btn-act primary" onclick="dispatchFartherShelterRide('Harbor Sanctuary Point (Farther)')">
+              Dispatch Safe Ride to Farther Shelter
+            </button>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- BED HOLD MODAL -->
+  <div class="modal-backdrop" id="holdModal">
+    <div class="generic-dialog">
+      <div style="width:50px;height:50px;border-radius:50%;background:#e0f2fe;color:var(--secondary);font-size:24px;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;">🔒</div>
+      <h2 style="font-size:20px;font-weight:800;margin-bottom:6px;">Temporary Bed Hold Locked!</h2>
+      <p style="font-size:13px;color:var(--text-muted);" id="holdModalDesc">
+        Your temporary confidential intake hold is active for 90 minutes.
+      </p>
+      <div style="background:#f8f6fc;border:1px solid var(--border);border-radius:10px;padding:14px;margin:16px 0;font-family:monospace;">
+        <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Hold Confirmation Token</div>
+        <div style="font-size:24px;font-weight:800;color:var(--primary);margin:6px 0;" id="holdTokenCode">#HOLD-8821</div>
+        <div style="font-size:12px;color:var(--success);font-weight:700;">● Guaranteed 90-Minute Exclusivity</div>
+      </div>
+      <button class="btn-act primary" style="width:100%;padding:11px;margin-bottom:8px;" onclick="closeHoldModal(true)">
+        Proceed to Safe Transit
+      </button>
+      <button class="btn-act" style="width:100%;" onclick="closeHoldModal(false)">
+        Dismiss
+      </button>
+    </div>
+  </div>
+
+  <!-- CUSTOM PASSCODE MODAL -->
+  <div class="modal-backdrop" id="passcodeModal">
+    <div class="generic-dialog">
+      <h2 style="font-size:19px;font-weight:800;margin-bottom:8px;">Set Custom Stealth Passcode</h2>
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:14px;">
+        Choose a discreet calculator key sequence that activates HerHorizon SafeRoute.
+      </p>
+      <div class="form-group" style="text-align:left;">
+        <label class="form-label">Sequence (e.g., 98.6+= or 999=)</label>
+        <input type="text" class="form-input" id="customCodeInput" value="98.6+=" />
+      </div>
+      <button class="btn-act primary" style="width:100%;padding:11px;margin-bottom:8px;" onclick="saveCustomPasscode()">
+        Save Stealth Passcode
+      </button>
+      <button class="btn-act" style="width:100%;" onclick="closePasscodeModal()">
+        Cancel
+      </button>
+    </div>
+  </div>
+
+  <!-- TRANSIT PASS MODAL -->
+  <div class="modal-backdrop" id="transitPassModal">
+    <div class="generic-dialog">
+      <div style="font-size:32px;margin-bottom:8px;">🎟️</div>
+      <h2 style="font-size:20px;font-weight:800;margin-bottom:6px;">City Commute Transit Pass</h2>
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:14px;">
+        Free rideshare & municipal transit voucher for guaranteed safe relocation.
+      </p>
+      <div style="background:#f8f6fc;border:2px dashed var(--primary);border-radius:12px;padding:16px;margin-bottom:16px;">
+        <div style="font-size:11px;font-weight:700;color:var(--primary);text-transform:uppercase;">Municipal Transit Subsidy</div>
+        <div style="font-size:26px;font-weight:900;color:#1f1a30;letter-spacing:2px;margin:6px 0;">TRANSIT-FREE-26</div>
+        <div style="font-size:12px;color:var(--success);font-weight:700;">Valid on Metro, Bus & Rideshare Dispatch</div>
+      </div>
+      <button class="btn-act primary" style="width:100%;padding:11px;margin-bottom:8px;" onclick="claimTransitPassAction()">
+        Apply to Safe Transit Dispatch
+      </button>
+      <button class="btn-act" style="width:100%;" onclick="closeTransitPassModal()">
+        Close
+      </button>
+    </div>
+  </div>
+
+  <!-- SOS MODAL -->
+  <div class="modal-backdrop" id="sosModal">
+    <div class="generic-dialog">
+      <div class="sos-icon-circle">!</div>
+      <h2 style="font-size: 22px; font-weight: 800; color: #1e182f; margin-bottom: 6px;">Priority Emergency SOS</h2>
+      <p style="font-size: 13.5px; color: var(--text-muted);">
+        Immediately dispatches your encrypted live GPS coordinates to guardians and active community patrol.
+      </p>
+
+      <div class="telemetry-terminal">
+        <div>Live Battery: <span id="sosBattery" style="font-weight:700;float:right;">Checking...</span></div>
+        <div>GPS Lat/Lng: <span style="font-weight:700;float:right;" id="sosCoords">Streaming...</span></div>
+        <div>Radius Accuracy: <span style="font-weight:700;float:right;" id="sosAcc">±-- m</span></div>
+      </div>
+
+      <button class="btn-act" style="background:var(--danger);color:#fff;width:100%;padding:14px;font-size:15px;border:none;margin-bottom:10px;" onclick="broadcastEmergencyBeacon()">
+        ((•)) Broadcast Live Emergency Beacon
+      </button>
+
+      <button class="btn-act" style="width:100%;" onclick="closeSOSDialog()">
+        Cancel (False Alarm)
+      </button>
+    </div>
+  </div>
+
+  <div id="visualStrobe" onclick="stopVisualStrobe()"></div>
+  <div id="portalToast">Notification</div>
+
+  <!-- LEAFLET JAVASCRIPT -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <script>
+    const APP_STATE = {
+      calculatorVal: '0',
+      keySequence: '',
+      stealthPasscode: '98.6+=',
+      coords: { lat: 19.250904, lng: 73.142782, acc: 25 },
+      hasLiveGPS: false,
+      gpsWatchId: null,
+      selectedCorridor: 'safe',
+      isSimulating: false,
+      simStep: 0,
+      simInterval: null,
+      isSirenOn: false,
+      audioContext: null,
+      sirenOsc: null,
+      map: null,
+      userMarker: null,
+      accuracyCircle: null,
+      corridorLayers: { safe: null, direct: null },
+      shelterMarkersGroup: null,
+      guardMarkersGroup: null,
+      activeShelterId: 1,
+      currentShelterScope: 'available',
+      currentFilterTag: 'all',
+      // Dynamic counselor chat state
+      counselorState: 'unassigned', // 'unassigned', 'assigning', 'assigned'
+      assignedCounselorName: 'Specialist Maya',
+      shelters: [
+        {
+          id: 1,
+          name: "Emergency Refugee Sanctuary",
+          area: "Central Dadar",
+          address: "Central Transit Corridor • 24/7 Priority Intake",
+          beds: 5,
+          familyUnits: 3,
+          secType: "Armed Kiosk & CCTV",
+          isFarther: false,
+          dLat: 0.0032,
+          dLng: -0.0016,
+          tags: ["women", "kids", "accessible"]
+        },
+        {
+          id: 2,
+          name: "Sakha Protect Haven",
+          area: "Colaba",
+          address: "Maritime Safe Enclave Sector 4 • 24/7 Intake",
+          beds: 2,
+          familyUnits: 1,
+          secType: "Verified CCTV & Escort",
+          isFarther: false,
+          dLat: 0.0018,
+          dLng: 0.0045,
+          tags: ["women", "pets", "accessible"]
+        },
+        {
+          id: 3,
+          name: "St. Jude Sanctuary Point",
+          area: "Transit Riverline",
+          address: "Transit Riverline Station • 24/7 Intake",
+          beds: 9,
+          familyUnits: 4,
+          secType: "Perimeter Patrol Guard",
+          isFarther: false,
+          dLat: 0.0055,
+          dLng: -0.0028,
+          tags: ["women", "kids", "pets", "accessible"]
+        },
+        {
+          id: 4,
+          name: "Sakhi One-Stop Support Shelter",
+          area: "Precinct Sector 3",
+          address: "Municipal Safe Precinct Sector 3",
+          beds: 0,
+          familyUnits: 0,
+          secType: "24/7 Monitored Safe Node",
+          isFarther: false,
+          dLat: -0.0042,
+          dLng: 0.0062,
+          tags: ["women", "accessible"]
+        },
+        {
+          id: 5,
+          name: "Harbor Sanctuary Point (Farther)",
+          area: "Northern Coast Reach",
+          address: "Outer Perimeter Highway Safe Station",
+          beds: 14,
+          familyUnits: 6,
+          secType: "Armed Perimeter Security",
+          isFarther: true,
+          dLat: 0.0310,
+          dLng: 0.0240,
+          tags: ["women", "kids", "pets", "accessible"]
+        },
+        {
+          id: 6,
+          name: "West Highland Family Refuge (Farther)",
+          area: "Western Foothills",
+          address: "Regional Safe Sanctuary Sector 9",
+          beds: 8,
+          familyUnits: 5,
+          secType: "24/7 State Police Node",
+          isFarther: true,
+          dLat: -0.0280,
+          dLng: -0.0310,
+          tags: ["women", "kids", "accessible"]
+        }
+      ]
+    };
+
+    if (localStorage.getItem('herhorizon_stealth_code')) {
+      APP_STATE.stealthPasscode = localStorage.getItem('herhorizon_stealth_code');
+    }
+
+    /* CALCULATOR ACTIONS */
+    function updateCalcDisplay() {
+      document.getElementById('calcDisplay').innerText = APP_STATE.calculatorVal;
+    }
+
+    function calcInput(digit) {
+      if (APP_STATE.calculatorVal === '0' && digit !== '.') {
+        APP_STATE.calculatorVal = digit;
+      } else {
+        if (digit === '.' && APP_STATE.calculatorVal.includes('.')) return;
+        APP_STATE.calculatorVal += digit;
+      }
+      APP_STATE.keySequence += digit;
+      updateCalcDisplay();
+      checkStegCode();
+    }
+
+    function calcAction(op) {
+      APP_STATE.keySequence += op;
+
+      if (op === 'C') {
+        APP_STATE.calculatorVal = '0';
+        document.getElementById('calcHistory').innerHTML = '&nbsp;';
+      } else if (op === '=') {
+        try {
+          const sanitized = APP_STATE.calculatorVal.replace(/×/g, '*').replace(/÷/g, '/').replace(/−/g, '-');
+          document.getElementById('calcHistory').innerText = APP_STATE.calculatorVal + ' =';
+          APP_STATE.calculatorVal = String(Function(`'use strict'; return (${sanitized})`)());
+        } catch {
+          APP_STATE.calculatorVal = 'Error';
+        }
+      } else if (['+', '-', '*', '/'].includes(op)) {
+        const symbol = op === '*' ? '×' : (op === '/' ? '÷' : (op === '-' ? '−' : '+'));
+        APP_STATE.calculatorVal += ` ${symbol} `;
+      } else if (op === '+/-') {
+        if (APP_STATE.calculatorVal.startsWith('-')) {
+          APP_STATE.calculatorVal = APP_STATE.calculatorVal.substring(1);
+        } else {
+          APP_STATE.calculatorVal = '-' + APP_STATE.calculatorVal;
+        }
+      } else if (op === '%') {
+        APP_STATE.calculatorVal = String(parseFloat(APP_STATE.calculatorVal) / 100);
+      }
+
+      updateCalcDisplay();
+      checkStegCode();
+    }
+
+    function checkStegCode() {
+      const s = APP_STATE.keySequence;
+      const custom = APP_STATE.stealthPasscode;
+      if (s.includes(custom) || s.includes("98.6+=") || s.includes("999=") || s.endsWith("911=")) {
+        APP_STATE.keySequence = '';
+        unlockSafeRoute();
+      }
+      if (APP_STATE.keySequence.length > 30) {
+        APP_STATE.keySequence = APP_STATE.keySequence.slice(-12);
+      }
+    }
+
+    function unlockSafeRoute() {
+      document.title = "HerHorizon — SafeRoute";
+      document.getElementById('calculator-persona').style.display = 'none';
+      
+      const haven = document.getElementById('haven-persona');
+      haven.style.display = 'flex';
+      
+      document.getElementById('lblPasscodeDisplay').innerText = APP_STATE.stealthPasscode;
+      document.getElementById('lblToolPasscode').innerText = APP_STATE.stealthPasscode;
+
+      renderAdminMatrix();
+      updateBedCountsSummary();
+      startActiveGPSWatcher();
+      showToast("Live Active GPS SafeRoute Engaged");
+    }
+
+    function triggerScrub() {
+      if (APP_STATE.isSirenOn) toggleSirenSound();
+      stopVisualStrobe();
+      if (APP_STATE.simInterval) clearInterval(APP_STATE.simInterval);
+
+      if (APP_STATE.gpsWatchId !== null) {
+        navigator.geolocation.clearWatch(APP_STATE.gpsWatchId);
+        APP_STATE.gpsWatchId = null;
+      }
+
+      APP_STATE.calculatorVal = '0';
+      APP_STATE.keySequence = '';
+      document.getElementById('calcHistory').innerHTML = '&nbsp;';
+      updateCalcDisplay();
+
+      document.title = "QuickCalc Utility";
+      document.getElementById('haven-persona').style.display = 'none';
+      document.getElementById('calculator-persona').style.display = 'flex';
+    }
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && document.getElementById('haven-persona').style.display === 'flex') {
+        triggerScrub();
+      }
+    });
+
+    /* ACTIVE GPS POLLING */
+    function startActiveGPSWatcher() {
+      if (!("geolocation" in navigator)) {
+        updateUIWithCoordinates(APP_STATE.coords.lat, APP_STATE.coords.lng, APP_STATE.coords.acc, false);
+        return;
+      }
+
+      APP_STATE.gpsWatchId = navigator.geolocation.watchPosition(
+        (pos) => {
+          APP_STATE.hasLiveGPS = true;
+          const lat = pos.coords.latitude;
+          const lng = pos.coords.longitude;
+          const acc = Math.round(pos.coords.accuracy || 15);
+
+          APP_STATE.coords = { lat, lng, acc };
+          updateUIWithCoordinates(lat, lng, acc, true);
+          updateMapPositions(lat, lng, acc);
+          recomputeSpatialShelters();
+        },
+        (err) => {
+          updateUIWithCoordinates(APP_STATE.coords.lat, APP_STATE.coords.lng, APP_STATE.coords.acc, false);
+          recomputeSpatialShelters();
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 2000 }
+      );
+    }
+
+    function forceGPSRefresh() {
+      showToast("Polling immediate GPS fix from hardware...");
+      if ("geolocation" in navigator) {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            APP_STATE.hasLiveGPS = true;
+            APP_STATE.coords = {
+              lat: pos.coords.latitude,
+              lng: pos.coords.longitude,
+              acc: Math.round(pos.coords.accuracy || 15)
+            };
+            updateUIWithCoordinates(APP_STATE.coords.lat, APP_STATE.coords.lng, APP_STATE.coords.acc, true);
+            updateMapPositions(APP_STATE.coords.lat, APP_STATE.coords.lng, APP_STATE.coords.acc);
+            recomputeSpatialShelters();
+            centerOnUser();
+            showToast("Satellite GPS Refreshed");
+          },
+          () => showToast("Hardware signal unavailable. Retaining current node.")
+        );
+      }
+    }
+
+    function updateUIWithCoordinates(lat, lng, acc, isLive) {
+      document.getElementById('lblLat').innerText = lat.toFixed(6);
+      document.getElementById('lblLng').innerText = lng.toFixed(6);
+      document.getElementById('lblAcc').innerText = `±${acc} meters`;
+      
+      const badge = document.getElementById('gpsModeBadge');
+      if (isLive) {
+        badge.innerHTML = `<span style="display:inline-block;width:6px;height:6px;background:#10b981;border-radius:50%;"></span> Active Satellite Lock`;
+        badge.style.color = "#047857";
+        badge.style.background = "#d1fae5";
+        document.getElementById('topBarGPSStatus').innerText = `Live GPS Stream (±${acc}m)`;
+      }
+
+      const coordStr = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+      document.getElementById('txPickupPoint').value = `${coordStr} (Auto-detected Current Location)`;
+      document.getElementById('guardianPingPreview').innerText = `"Safe on Corridor. Coordinates: ${coordStr}"`;
+      document.getElementById('sosCoords').innerText = coordStr;
+      document.getElementById('sosAcc').innerText = `±${acc} m`;
+    }
+
+    function loadSampleKalyanCoords() {
+      APP_STATE.coords = { lat: 19.250904, lng: 73.142782, acc: 12 };
+      updateUIWithCoordinates(APP_STATE.coords.lat, APP_STATE.coords.lng, APP_STATE.coords.acc, true);
+      updateMapPositions(APP_STATE.coords.lat, APP_STATE.coords.lng, APP_STATE.coords.acc);
+      recomputeSpatialShelters();
+      centerOnUser();
+      showToast("Loaded Sample City Mesh");
+    }
+
+    /* LEAFLET MAP ENGINE */
+    function initLeafletMap() {
+      const mapDiv = document.getElementById('realMap');
+      if (!mapDiv) return;
+
+      if (!APP_STATE.map) {
+        APP_STATE.map = L.map('realMap', { zoomControl: true, attributionControl: false }).setView([APP_STATE.coords.lat, APP_STATE.coords.lng], 15);
+
+        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+          maxZoom: 19
+        }).addTo(APP_STATE.map);
+
+        const userDivIcon = L.divIcon({
+          className: 'user-corridor-marker',
+          html: `
+            <div style="position:relative;width:28px;height:28px;">
+              <div style="position:absolute;top:0;left:0;width:28px;height:28px;background:rgba(123,44,191,0.3);border-radius:50%;animation:pulseRing 1.8s infinite;"></div>
+              <div style="position:absolute;top:5px;left:5px;width:18px;height:18px;background:#7b2cbf;border:3px solid #ffffff;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,0.4);"></div>
+            </div>
+          `,
+          iconSize: [28, 28],
+          iconAnchor: [14, 14]
+        });
+
+        APP_STATE.userMarker = L.marker([APP_STATE.coords.lat, APP_STATE.coords.lng], { icon: userDivIcon })
+          .addTo(APP_STATE.map)
+          .bindPopup("<strong>Live Verified GPS Node</strong><br>Start Location (Auto-detected)");
+
+        APP_STATE.accuracyCircle = L.circle([APP_STATE.coords.lat, APP_STATE.coords.lng], {
+          radius: APP_STATE.coords.acc,
+          color: '#0284c7',
+          fillColor: '#38bdf8',
+          fillOpacity: 0.15,
+          weight: 1.5
+        }).addTo(APP_STATE.map);
+
+        APP_STATE.shelterMarkersGroup = L.layerGroup().addTo(APP_STATE.map);
+        APP_STATE.guardMarkersGroup = L.layerGroup().addTo(APP_STATE.map);
+
+        recomputeCorridorPolylines();
+        recomputeSpatialShelters();
+      }
+
+      setTimeout(() => {
+        if (APP_STATE.map) APP_STATE.map.invalidateSize();
+      }, 150);
+    }
+
+    function updateMapPositions(lat, lng, acc) {
+      if (!APP_STATE.map || !APP_STATE.userMarker) return;
+      const newLatLng = [lat, lng];
+      APP_STATE.userMarker.setLatLng(newLatLng);
+      APP_STATE.accuracyCircle.setLatLng(newLatLng);
+      APP_STATE.accuracyCircle.setRadius(acc);
+      recomputeCorridorPolylines();
+    }
+
+    function centerOnUser() {
+      if (APP_STATE.map) {
+        APP_STATE.map.invalidateSize();
+        APP_STATE.map.setView([APP_STATE.coords.lat, APP_STATE.coords.lng], 15, { animate: true });
+      }
+    }
+
+    function recomputeCorridorPolylines() {
+      if (!APP_STATE.map) return;
+      const uLat = APP_STATE.coords.lat;
+      const uLng = APP_STATE.coords.lng;
+
+      const safePoints = [
+        [uLat, uLng],
+        [uLat - 0.0021, uLng - 0.0015],
+        [uLat - 0.0067, uLng - 0.0029],
+        [uLat - 0.0094, uLng - 0.0034]
+      ];
+
+      const directPoints = [
+        [uLat, uLng],
+        [uLat - 0.0047, uLng - 0.0008],
+        [uLat - 0.0094, uLng - 0.0034]
+      ];
+
+      if (APP_STATE.corridorLayers.safe) APP_STATE.map.removeLayer(APP_STATE.corridorLayers.safe);
+      if (APP_STATE.corridorLayers.direct) APP_STATE.map.removeLayer(APP_STATE.corridorLayers.direct);
+
+      APP_STATE.corridorLayers.safe = L.polyline(safePoints, {
+        color: '#7b2cbf',
+        weight: 6,
+        opacity: 0.9,
+        lineCap: 'round'
+      });
+
+      APP_STATE.corridorLayers.direct = L.polyline(directPoints, {
+        color: '#f59e0b',
+        weight: 4,
+        dashArray: '6, 8',
+        opacity: 0.8
+      });
+
+      if (APP_STATE.selectedCorridor === 'safe') {
+        APP_STATE.corridorLayers.safe.addTo(APP_STATE.map);
+      } else {
+        APP_STATE.corridorLayers.direct.addTo(APP_STATE.map);
+      }
+    }
+
+    function calculateHaversine(lat1, lon1, lat2, lon2) {
+      const R = 6371;
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c;
+    }
+
+    function recomputeSpatialShelters() {
+      const uLat = APP_STATE.coords.lat;
+      const uLng = APP_STATE.coords.lng;
+
+      if (APP_STATE.map && APP_STATE.shelterMarkersGroup) {
+        APP_STATE.shelterMarkersGroup.clearLayers();
+        APP_STATE.guardMarkersGroup.clearLayers();
+      }
+
+      const shelterIcon = L.divIcon({
+        html: `<div style="background:#7b2cbf;color:#fff;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.3);font-size:14px;">🏠</div>`,
+        iconSize: [28, 28],
+        iconAnchor: [14, 14]
+      });
+
+      const guardIcon = L.divIcon({
+        html: `<div style="background:#0284c7;color:#fff;width:24px;height:24px;border-radius:6px;display:flex;align-items:center;justify-content:center;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.3);font-size:12px;">👮</div>`,
+        iconSize: [24, 24],
+        iconAnchor: [12, 12]
+      });
+
+      const selectEl = document.getElementById('txDestinationSelect');
+      if (selectEl) selectEl.innerHTML = '';
+
+      APP_STATE.shelters.forEach(s => {
+        const sLat = uLat + s.dLat;
+        const sLng = uLng + s.dLng;
+        const distKm = calculateHaversine(uLat, uLng, sLat, sLng).toFixed(1);
+        s.computedDist = `${distKm} km`;
+
+        if (APP_STATE.map && APP_STATE.shelterMarkersGroup) {
+          L.marker([sLat, sLng], { icon: shelterIcon })
+            .addTo(APP_STATE.shelterMarkersGroup)
+            .bindPopup(`
+              <div style="font-family:sans-serif;padding:4px;">
+                <strong style="color:#241442;">${s.name}</strong><br>
+                <span style="font-size:12px;color:#646174;">${s.beds > 0 ? s.beds + ' beds available' : 'At Capacity'}</span><br>
+                <div style="display:flex;gap:4px;margin-top:6px;">
+                  <button onclick="quickTransitToShelter('${s.name}')" style="background:#241442;color:#fff;border:none;padding:4px 8px;border-radius:4px;cursor:pointer;font-size:11px;font-weight:700;">Safe Ride</button>
+                  <button onclick="startWalkToShelter(${s.id})" style="background:#7b2cbf;color:#fff;border:none;padding:4px 8px;border-radius:4px;cursor:pointer;font-size:11px;font-weight:700;">Walk Route</button>
+                </div>
+              </div>
+            `);
+        }
+
+        if (selectEl) {
+          const opt = document.createElement('option');
+          opt.value = s.name;
+          opt.innerText = `${s.name} (${s.area} • ${distKm} km)${s.isFarther ? ' [Farther Haven]' : ''}`;
+          selectEl.appendChild(opt);
+        }
+      });
+
+      if (APP_STATE.map && APP_STATE.guardMarkersGroup) {
+        const guardCoords = [
+          [uLat - 0.0017, uLng + 0.0032],
+          [uLat - 0.0051, uLng + 0.0004]
+        ];
+        guardCoords.forEach(c => {
+          L.marker(c, { icon: guardIcon })
+            .addTo(APP_STATE.guardMarkersGroup)
+            .bindPopup("<strong>Active Police/Community Guard Kiosk</strong><br>24/7 Monitored Safe Node");
+        });
+      }
+
+      renderShelterCards();
+      updateBedCountsSummary();
+    }
+
+    /* SAFE SHELTERS DIRECTORY: AVAILABLE SHELTERS VS ALL SAFE HAVENS */
+    function toggleShelterScope(scope, btn) {
+      APP_STATE.currentShelterScope = scope;
+      document.getElementById('chipAvailableShelters').classList.remove('active');
+      document.getElementById('chipAllHavens').classList.remove('active');
+      btn.classList.add('active');
+      renderShelterCards();
+    }
+
+    function filterShelterTag(tag, btn) {
+      document.querySelectorAll('.shelter-filters .filter-chip').forEach(c => {
+        if (c.id !== 'chipAvailableShelters' && c.id !== 'chipAllHavens') c.classList.remove('active');
+      });
+      btn.classList.add('active');
+      APP_STATE.currentFilterTag = tag;
+      renderShelterCards();
+    }
+
+    function renderShelterCards() {
+      const container = document.getElementById('shelterListingGrid');
+      if (!container) return;
+
+      let list = APP_STATE.shelters;
+
+      if (APP_STATE.currentShelterScope === 'available') {
+        list = list.filter(s => s.beds > 0 && !s.isFarther);
+      }
+
+      if (APP_STATE.currentFilterTag !== 'all') {
+        list = list.filter(s => s.tags.includes(APP_STATE.currentFilterTag));
+      }
+
+      container.innerHTML = list.map(s => {
+        const isFull = s.beds === 0;
+        return `
+        <div class="shelter-entry-card ${s.isFarther ? 'farther-shelter' : ''}">
+          <div>
+            <div class="sec-badge-row">
+              <span class="badge-bed ${isFull ? 'full' : ''}">
+                ${isFull ? 'At Capacity • Auto-Rerouting Active' : s.beds + ' Beds Open Now'}
+              </span>
+              <span style="font-size:12px;font-weight:700;color:var(--primary);">📍 ${s.computedDist || '1.1 km'} away</span>
+            </div>
+            <h3 class="shelter-entry-title">${s.name}</h3>
+            <div style="font-size:12px;color:var(--text-muted);font-weight:600;margin-bottom:4px;">${s.area} • ${s.address}</div>
+            
+            <div class="feature-pills" style="margin-top:8px;">
+              <span class="badge-sec-tag">🛡️ ${s.secType}</span>
+              <span class="pill">Family Units: ${s.familyUnits}</span>
+              ${s.isFarther ? '<span class="pill" style="background:#f3e8ff;color:#7e22ce;font-weight:700;">Farther Location</span>' : ''}
+              ${s.tags.includes('pets') ? '<span class="pill">🐾 Pets Welcome</span>' : ''}
+              ${s.tags.includes('accessible') ? '<span class="pill">♿ Barrier Free</span>' : ''}
+            </div>
+          </div>
+
+          <div>
+            <button class="btn-act primary" style="width:100%;margin-bottom:6px;font-size:12.5px;" onclick="requestBedHold(${s.id})">
+              🔒 Hold Bed Token (90 Min)
+            </button>
+            <div class="shelter-actions-row">
+              <button class="btn-act dark" onclick="quickTransitToShelter('${s.name}')">
+                🚗 Safe Ride
+              </button>
+              <button class="btn-act primary" onclick="startWalkToShelter(${s.id})">
+                🚶 Walk Safer Route
+              </button>
+            </div>
+          </div>
+        </div>
+        `;
+      }).join('');
+    }
+
+    function updateBedCountsSummary() {
+      const totalBeds = APP_STATE.shelters.reduce((acc, s) => acc + s.beds, 0);
+      const totalFamily = APP_STATE.shelters.reduce((acc, s) => acc + s.familyUnits, 0);
+      
+      const elBeds = document.getElementById('statOpenBeds');
+      const elFam = document.getElementById('statFamilyUnits');
+      if (elBeds) elBeds.innerText = totalBeds;
+      if (elFam) elFam.innerText = totalFamily;
+    }
+
+    /* WALK TO SHELTER (RUNS SIMULATION & SHOWS SAFER ROUTE) */
+    function startWalkToShelter(shelterId) {
+      const shelter = APP_STATE.shelters.find(s => s.id === shelterId) || APP_STATE.shelters[0];
+      APP_STATE.activeShelterId = shelterId;
+
+      document.getElementById('lblWalkTargetShelter').innerText = `Target: ${shelter.name}`;
+
+      const mapBtn = document.querySelectorAll('.nav-tab-btn')[1];
+      showPortalTab('view-map', mapBtn);
+
+      initLeafletMap();
+      selectCorridor('safe');
+      startContinuousWalkSimulation();
+      showToast(`Walking Safer Route to ${shelter.name} active with live escorted simulation.`);
+    }
+
+    function startContinuousWalkSimulation() {
+      if (APP_STATE.simInterval) clearInterval(APP_STATE.simInterval);
+      APP_STATE.isSimulating = true;
+      APP_STATE.simStep = 0;
+
+      const uLat = APP_STATE.coords.lat;
+      const uLng = APP_STATE.coords.lng;
+      const path = [
+        [uLat, uLng],
+        [uLat - 0.0012, uLng - 0.0008],
+        [uLat - 0.0024, uLng - 0.0016],
+        [uLat - 0.0048, uLng - 0.0022],
+        [uLat - 0.0072, uLng - 0.0030],
+        [uLat - 0.0094, uLng - 0.0034]
+      ];
+
+      const btn = document.getElementById('btnSimulate');
+      btn.innerText = "⏸ Walking Escort Simulation Running...";
+
+      APP_STATE.simInterval = setInterval(() => {
+        APP_STATE.simStep++;
+        if (APP_STATE.simStep >= path.length) {
+          clearInterval(APP_STATE.simInterval);
+          APP_STATE.isSimulating = false;
+          btn.innerText = "▶ Restart Walking Escort Simulation";
+          showToast("Arrived safely at Shelter Perimeter Gate!");
+          return;
+        }
+        const pt = path[APP_STATE.simStep];
+        if (APP_STATE.userMarker) APP_STATE.userMarker.setLatLng(pt);
+        if (APP_STATE.accuracyCircle) APP_STATE.accuracyCircle.setLatLng(pt);
+        if (APP_STATE.map) APP_STATE.map.panTo(pt);
+      }, 1900);
+    }
+
+    function toggleMovementSimulation() {
+      const btn = document.getElementById('btnSimulate');
+      if (APP_STATE.isSimulating) {
+        clearInterval(APP_STATE.simInterval);
+        APP_STATE.isSimulating = false;
+        btn.innerText = "▶ Resume Walking Escort Simulation";
+        showToast("Escort simulation paused.");
+      } else {
+        startContinuousWalkSimulation();
+      }
+    }
+
+    /* SEND GUARDIANS EXACT COORDINATES */
+    function broadcastCurrentCoordsToGuardians() {
+      const currentPos = APP_STATE.userMarker ? APP_STATE.userMarker.getLatLng() : APP_STATE.coords;
+      const coordStr = `${currentPos.lat.toFixed(6)}, ${currentPos.lng.toFixed(6)}`;
+      showToast(`Exact GPS Coordinates [${coordStr}] transmitted to Maya Lin & Elena Vance.`);
+    }
+
+    /* SAFE RIDE & VERIFIED DRIVER DETAILS */
+    function quickTransitToShelter(shelterName) {
+      const select = document.getElementById('txDestinationSelect');
+      if (select) select.value = shelterName;
+      const transitTabBtn = document.querySelectorAll('.nav-tab-btn')[2];
+      showPortalTab('view-transit', transitTabBtn);
+      showToast(`Safe transit configured for ${shelterName}.`);
+    }
+
+    function onDestinationChanged() {
+      document.getElementById('driverDetailsCard').style.display = 'none';
+    }
+
+    function dispatchSafeTransit() {
+      const dest = document.getElementById('txDestinationSelect').value;
+      const card = document.getElementById('driverDetailsCard');
+      const singlePin = Math.floor(1000 + Math.random() * 9000);
+
+      document.getElementById('unifiedPIN').innerText = singlePin;
+      document.getElementById('driverSpokenPin').innerText = singlePin;
+      card.style.display = 'block';
+
+      showToast(`Verified municipal transit dispatched to ${dest}! Driver & Officer verified.`);
+      card.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function dispatchFartherShelterRide(shelterName) {
+      const transitBtn = document.querySelectorAll('.nav-tab-btn')[2];
+      showPortalTab('view-transit', transitBtn);
+      const select = document.getElementById('txDestinationSelect');
+      if (select) select.value = shelterName;
+      dispatchSafeTransit();
+      showToast(`Safe Ride to Farther Shelter (${shelterName}) confirmed with zero-cost voucher.`);
+    }
+
+    /* BED HOLD MODAL ACTIONS */
+    function requestBedHold(shelterId) {
+      const shelter = APP_STATE.shelters.find(s => s.id === shelterId);
+      if (!shelter) return;
+
+      const randToken = '#HOLD-' + Math.floor(1000 + Math.random() * 9000);
+      document.getElementById('holdTokenCode').innerText = randToken;
+      document.getElementById('holdModalDesc').innerText = `Confidential bed reserved at ${shelter.name} (${shelter.area}) for 90 minutes. Intake desk is notified.`;
+      
+      document.getElementById('holdModal').style.display = 'flex';
+    }
+
+    function closeHoldModal(proceedToTransit) {
+      document.getElementById('holdModal').style.display = 'none';
+      if (proceedToTransit) {
+        const transitBtn = document.querySelectorAll('.nav-tab-btn')[2];
+        showPortalTab('view-transit', transitBtn);
+        showToast("Transit coordinates linked to bed reservation.");
+      }
+    }
+
+    /* CUSTOM PASSCODE CONFIG */
+    function openPasscodeModal() {
+      document.getElementById('customCodeInput').value = APP_STATE.stealthPasscode;
+      document.getElementById('passcodeModal').style.display = 'flex';
+    }
+
+    function closePasscodeModal() {
+      document.getElementById('passcodeModal').style.display = 'none';
+    }
+
+    function saveCustomPasscode() {
+      const val = document.getElementById('customCodeInput').value.trim();
+      if (!val) {
+        showToast("Passcode cannot be empty.");
+        return;
+      }
+      APP_STATE.stealthPasscode = val;
+      localStorage.setItem('herhorizon_stealth_code', val);
+      document.getElementById('lblPasscodeDisplay').innerText = val;
+      document.getElementById('lblToolPasscode').innerText = val;
+      document.getElementById('calcHelpCode').innerText = val;
+      closePasscodeModal();
+      showToast("Stealth Passcode successfully updated!");
+    }
+
+    /* TRANSIT PASS ACTIONS */
+    function openTransitPassModal() {
+      document.getElementById('transitPassModal').style.display = 'flex';
+    }
+    function closeTransitPassModal() {
+      document.getElementById('transitPassModal').style.display = 'none';
+    }
+    function claimTransitPassAction() {
+      closeTransitPassModal();
+      const transitBtn = document.querySelectorAll('.nav-tab-btn')[2];
+      showPortalTab('view-transit', transitBtn);
+      showToast("Free Transit Voucher applied to current ride!");
+    }
+
+    /* NATIVE CALL AND SMS APPLICATION TRIGGERS */
+    function triggerNativePhoneCall(phoneNumber, label) {
+      showToast(`Launching calling app for ${label}...`);
+      window.location.href = `tel:${phoneNumber}`;
+    }
+
+    function triggerNativeSMS(phoneNumber, initialBody) {
+      showToast(`Launching messaging app for ${phoneNumber}...`);
+      const encodedMsg = encodeURIComponent(initialBody || 'SAFE: Need assistance');
+      window.location.href = `sms:${phoneNumber}?body=${encodedMsg}`;
+    }
+
+    function bookFreeRideFromSupport() {
+      const transitBtn = document.querySelectorAll('.nav-tab-btn')[2];
+      showPortalTab('view-transit', transitBtn);
+      showToast("Opening Safe Transit Dispatch with free ride voucher pre-applied.");
+    }
+
+    /* INTERACTIVE CHAT ENGINE WITH REAL COUNSELOR ASSIGNMENT SIMULATION */
+    function submitChatMessage() {
+      const input = document.getElementById('supportChatInput');
+      const text = input.value.trim();
+      if (!text) return;
+
+      appendChatMessage(text, 'user');
+      input.value = '';
+
+      // If Counselor is already actively assigned, Specialist Maya replies
+      if (APP_STATE.counselorState === 'assigned') {
+        setTimeout(() => {
+          generateCounselorReply(text);
+        }, 1100);
+        return;
+      }
+
+      // If asking for a counselor or trauma support, trigger assignment workflow
+      const low = text.toLowerCase();
+      if (low.includes('counsel') || low.includes('trauma') || low.includes('802') || low.includes('specialist') || low.includes('talk')) {
+        assignCounselorWorkflow();
+        return;
+      }
+
+      // Default automated triage bot response
+      setTimeout(() => {
+        let reply = "We are monitoring your safety live. You can request a live trauma specialist, lock a bed hold, or dispatch safe transit.";
+        if (low.includes('bed') || low.includes('shelter')) {
+          reply = "I can immediately lock an exclusive 90-minute bed hold for you at our nearest secure shelter. Would you like me to reserve it?";
+        } else if (low.includes('transit') || low.includes('ride') || low.includes('pass')) {
+          reply = "Your City Commute Transit Pass is active for zero-cost travel. Would you like me to switch you to transit booking?";
+        }
+        appendChatMessage(reply, 'bot');
+      }, 700);
+    }
+
+    function sendQuickChatMessage(msg) {
+      appendChatMessage(msg, 'user');
+
+      if (msg.includes('counselor') || msg.includes('802')) {
+        assignCounselorWorkflow();
+      } else if (msg.includes('bed')) {
+        requestBedHold(1);
+        setTimeout(() => {
+          appendChatMessage("I have locked a 90-Minute Bed Hold at Emergency Refugee Sanctuary. Your verification token is visible on screen.", "bot");
+        }, 600);
+      } else if (msg.includes('rideshare') || msg.includes('voucher')) {
+        openTransitPassModal();
+        setTimeout(() => {
+          appendChatMessage("Opening your complimentary City Commute Pass voucher now.", "bot");
+        }, 600);
+      } else {
+        setTimeout(() => {
+          appendChatMessage("Request registered. Support specialist standing by.", "bot");
+        }, 600);
+      }
+    }
+
+    function assignCounselorWorkflow() {
+      if (APP_STATE.counselorState === 'assigned') {
+        setTimeout(() => {
+          appendChatMessage("Specialist Maya is already on this line and reading your messages. How can I help you right now?", 'counselor');
+        }, 600);
+        return;
+      }
+
+      APP_STATE.counselorState = 'assigning';
+      document.getElementById('chatSubStatus').innerText = "Assigning Specialist...";
+      
+      // Step 1: Tell user counselor will be assigned
+      appendChatMessage("⏳ Connecting to trauma desk... A certified trauma specialist will be assigned to this session in a moment.", "system");
+
+      // Step 2: After 3.5 seconds, assign the counselor and have them reply
+      setTimeout(() => {
+        APP_STATE.counselorState = 'assigned';
+        document.getElementById('chatTitle').innerText = "Specialist Maya (Assigned)";
+        document.getElementById('chatSubStatus').innerText = "● Counselor Active & Listening";
+        
+        appendChatMessage("🟢 Specialist Maya has joined the confidential session.", "system");
+        
+        setTimeout(() => {
+          appendChatMessage("Hello, I am Maya. I am a certified trauma-informed specialist and I'm right here with you on this line. You are completely safe to share whatever you need. Are you currently in a secure spot, or do you need me to route immediate safe transit for you?", "counselor");
+        }, 600);
+      }, 3500);
+    }
+
+    function generateCounselorReply(userText) {
+      const low = userText.toLowerCase();
+      let response = "I hear you. Take a slow breath, you don't have to face this alone. I'm staying right here on this screen with you.";
+      
+      if (low.includes('scared') || low.includes('help') || low.includes('danger') || low.includes('threat')) {
+        response = "I understand you are feeling scared, and your safety is my top priority right now. Please keep this screen close. Would you like me to initiate an unmarked vehicle dispatch to your current GPS point?";
+      } else if (low.includes('where') || low.includes('go') || low.includes('shelter')) {
+        response = "We have verified safe beds held right now at Dadar and Maritime Enclaves. Both feature 24/7 guarded security checkpoints. I can secure an exclusive token for you immediately.";
+      } else if (low.includes('ride') || low.includes('car') || low.includes('transit')) {
+        response = "I can authorize your free municipal transit pass right now. An unmarked vehicle with single PIN verification will pull up quietly. Let me know when you're ready for dispatch.";
+      } else if (low.includes('call') || low.includes('talk')) {
+        response = "If speaking aloud is safe for you right now, you can tap 'Open Calling App' on the right to bridge to my voice line directly without leaving a carrier log.";
+      }
+      appendChatMessage(response, 'counselor');
+    }
+
+    function appendChatMessage(msg, senderClass) {
+      const container = document.getElementById('chatMsgContainer');
+      const div = document.createElement('div');
+      div.className = `chat-msg ${senderClass}`;
+      div.innerText = msg;
+      container.appendChild(div);
+      container.scrollTop = container.scrollHeight;
+    }
+
+    function resetChat() {
+      APP_STATE.counselorState = 'unassigned';
+      document.getElementById('chatTitle').innerText = "Support Desk #802";
+      document.getElementById('chatSubStatus').innerText = "System Ready • Automated Triage";
+      const container = document.getElementById('chatMsgContainer');
+      container.innerHTML = `
+        <div class="chat-msg bot">
+          Hello. You are connected directly to confidential support. You are in a safe, encrypted space. How can we assist your safety right now?
+        </div>
+      `;
+      showToast("Chat session cleared.");
+    }
+
+    function sendSilentBeacon() {
+      showToast("Silent Beacon active. Coordinates & battery quietly broadcasted.");
+    }
+
+    /* SHELTER ADMIN DASHBOARD */
+    function renderAdminMatrix() {
+      const tbody = document.getElementById('adminMatrixBody');
+      if (!tbody) return;
+
+      tbody.innerHTML = APP_STATE.shelters.map(s => {
+        let statusClass = 'open';
+        let statusText = 'Immediate Openings';
+        if (s.beds === 0) {
+          statusClass = 'full';
+          statusText = 'At Capacity - Auto Rerouting Active';
+        } else if (s.beds <= 2) {
+          statusClass = 'limited';
+          statusText = 'Limited Capacity';
+        }
+
+        return `
+          <tr>
+            <td>
+              <strong>${s.name}</strong>
+              <div style="font-size:11.5px;color:var(--text-muted);">${s.computedDist || '1.1 km'} away • ${s.area}</div>
+            </td>
+            <td>
+              <span style="font-size:12px;font-weight:700;color:${s.isFarther ? '#9333ea' : '#1e40af'};">
+                ${s.isFarther ? 'Farther Haven' : 'Nearby Haven'}
+              </span>
+            </td>
+            <td>
+              <div class="stepper-control">
+                <button class="step-btn" onclick="adjustAdminCapacity(${s.id}, 'beds', -1)">−</button>
+                <span class="step-val" id="admBed_${s.id}">${s.beds}</span>
+                <button class="step-btn" onclick="adjustAdminCapacity(${s.id}, 'beds', 1)">+</button>
+              </div>
+            </td>
+            <td>
+              <div class="stepper-control">
+                <button class="step-btn" onclick="adjustAdminCapacity(${s.id}, 'familyUnits', -1)">−</button>
+                <span class="step-val" id="admFam_${s.id}">${s.familyUnits}</span>
+                <button class="step-btn" onclick="adjustAdminCapacity(${s.id}, 'familyUnits', 1)">+</button>
+              </div>
+            </td>
+            <td>
+              <span class="status-tag ${statusClass}">${statusText}</span>
+            </td>
+            <td>
+              ${s.isFarther ? `
+                <button class="btn-act primary" style="padding:4px 9px;font-size:11.5px;" onclick="dispatchFartherShelterRide('${s.name}')">
+                  🚗 Dispatch Ride
+                </button>
+              ` : `
+                <span style="font-size:12px;color:var(--success);font-weight:700;">Auto-Synced</span>
+              `}
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function adjustAdminCapacity(shelterId, field, delta) {
+      const s = APP_STATE.shelters.find(item => item.id === shelterId);
+      if (!s) return;
+      s[field] = Math.max(0, s[field] + delta);
+      renderAdminMatrix();
+      recomputeSpatialShelters();
+      showToast(`Live Synced ${s.name}: ${field} set to ${s[field]}.`);
+    }
+
+    function syncAdminData() {
+      renderAdminMatrix();
+      recomputeSpatialShelters();
+      showToast("Online Active Sync complete across all nearby and farther havens.");
+    }
+
+    /* CORRIDOR SELECTION */
+    function selectCorridor(type) {
+      APP_STATE.selectedCorridor = type;
+      const safeCard = document.getElementById('cardCorridorSafe');
+      const directCard = document.getElementById('cardCorridorDirect');
+
+      if (type === 'safe') {
+        safeCard.classList.add('active');
+        directCard.classList.remove('active');
+        if (APP_STATE.map && !APP_STATE.map.hasLayer(APP_STATE.corridorLayers.safe)) APP_STATE.map.addLayer(APP_STATE.corridorLayers.safe);
+        if (APP_STATE.map && APP_STATE.map.hasLayer(APP_STATE.corridorLayers.direct)) APP_STATE.map.removeLayer(APP_STATE.corridorLayers.direct);
+        showToast("Safe Corridor Engaged (98% Safety Score)");
+      } else {
+        directCard.classList.add('active');
+        safeCard.classList.remove('active');
+        if (APP_STATE.map && !APP_STATE.map.hasLayer(APP_STATE.corridorLayers.direct)) APP_STATE.map.addLayer(APP_STATE.corridorLayers.direct);
+        if (APP_STATE.map && APP_STATE.map.hasLayer(APP_STATE.corridorLayers.safe)) APP_STATE.map.removeLayer(APP_STATE.corridorLayers.safe);
+        showToast("Caution: Direct shortcut traverses unlit alleys.");
+      }
+    }
+
+    function toggleLayer(layerName) {
+      if (!APP_STATE.map) return;
+      if (layerName === 'shelters') {
+        const checked = document.getElementById('chkShelters').checked;
+        checked ? APP_STATE.map.addLayer(APP_STATE.shelterMarkersGroup) : APP_STATE.map.removeLayer(APP_STATE.shelterMarkersGroup);
+      } else if (layerName === 'guards') {
+        const checked = document.getElementById('chkGuards').checked;
+        checked ? APP_STATE.map.addLayer(APP_STATE.guardMarkersGroup) : APP_STATE.map.removeLayer(APP_STATE.guardMarkersGroup);
+      } else if (layerName === 'corridors') {
+        const checked = document.getElementById('chkCorridors').checked;
+        if (checked) {
+          APP_STATE.selectedCorridor === 'safe' ? APP_STATE.map.addLayer(APP_STATE.corridorLayers.safe) : APP_STATE.map.addLayer(APP_STATE.corridorLayers.direct);
+        } else {
+          APP_STATE.map.removeLayer(APP_STATE.corridorLayers.safe);
+          APP_STATE.map.removeLayer(APP_STATE.corridorLayers.direct);
+        }
+      } else if (layerName === 'radius') {
+        const checked = document.getElementById('chkRadius').checked;
+        checked ? APP_STATE.map.addLayer(APP_STATE.accuracyCircle) : APP_STATE.map.removeLayer(APP_STATE.accuracyCircle);
+      }
+    }
+
+    /* NAVIGATION TABS ROUTING */
+    function showPortalTab(viewId, btnEl) {
+      document.getElementById('view-shelters').style.display = 'none';
+      document.getElementById('view-map').style.display = 'none';
+      document.getElementById('view-transit').style.display = 'none';
+      document.getElementById('view-support').style.display = 'none';
+      document.getElementById('view-admin').style.display = 'none';
+      document.getElementById('view-tools').style.display = 'none';
+      document.getElementById('view-guardians').style.display = 'none';
+
+      document.querySelectorAll('.nav-tab-btn').forEach(b => b.classList.remove('active'));
+
+      const target = document.getElementById(viewId);
+      if (viewId === 'view-map') {
+        target.style.display = 'flex';
+        initLeafletMap();
+        setTimeout(() => {
+          if (APP_STATE.map) {
+            APP_STATE.map.invalidateSize();
+            centerOnUser();
+          }
+        }, 120);
+      } else {
+        target.style.display = 'block';
+      }
+
+      if (btnEl) btnEl.classList.add('active');
+    }
+
+    /* HARDWARE & SENSORY TOOLS */
+    function toggleSirenSound() {
+      if (APP_STATE.isSirenOn) {
+        if (APP_STATE.sirenOsc) APP_STATE.sirenOsc.stop();
+        APP_STATE.isSirenOn = false;
+        showToast("Audio Siren Deactivated");
+      } else {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        APP_STATE.audioContext = new AudioContext();
+
+        const osc = APP_STATE.audioContext.createOscillator();
+        const gain = APP_STATE.audioContext.createGain();
+
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(800, APP_STATE.audioContext.currentTime);
+        osc.frequency.linearRampToValueAtTime(1350, APP_STATE.audioContext.currentTime + 0.35);
+        osc.frequency.linearRampToValueAtTime(800, APP_STATE.audioContext.currentTime + 0.7);
+
+        gain.gain.setValueAtTime(0.35, APP_STATE.audioContext.currentTime);
+        osc.connect(gain);
+        gain.connect(APP_STATE.audioContext.destination);
+
+        osc.start();
+        APP_STATE.sirenOsc = osc;
+        APP_STATE.isSirenOn = true;
+        showToast("High-Decibel Siren Active!");
+      }
+    }
+
+    function triggerVisualStrobe() {
+      document.getElementById('visualStrobe').classList.add('strobe-flashing');
+      showToast("Tap screen anywhere to stop strobe beacon");
+    }
+
+    function stopVisualStrobe() {
+      document.getElementById('visualStrobe').classList.remove('strobe-flashing');
+    }
+
+    function scheduleFakeCall() {
+      showToast("Decoy Call scheduled in 3 seconds. Place phone to ear.");
+      setTimeout(() => {
+        const answered = confirm("📞 INCOMING CALL:\nHome / Advocate Office\n\nPress OK to Answer, Cancel to Dismiss.");
+        if (answered && "speechSynthesis" in window) {
+          const speech = new SpeechSynthesisUtterance("Hi, I'm right outside by the corner transit point. I have the car ready, come out whenever you're ready.");
+          speech.rate = 0.95;
+          window.speechSynthesis.speak(speech);
+        }
+      }, 3000);
+    }
+
+    function openSOSDialog() {
+      document.getElementById('sosModal').style.display = 'flex';
+      document.getElementById('sosCoords').innerText = `${APP_STATE.coords.lat.toFixed(5)}, ${APP_STATE.coords.lng.toFixed(5)}`;
+      document.getElementById('sosAcc').innerText = `±${APP_STATE.coords.acc} m`;
+
+      if ('getBattery' in navigator) {
+        navigator.getBattery().then(b => {
+          document.getElementById('sosBattery').innerText = `${Math.round(b.level * 100)}% (${b.charging ? 'Charging' : 'Discharging'})`;
+        });
+      } else {
+        document.getElementById('sosBattery').innerText = '84% (Nominal)';
+      }
+    }
+
+    function closeSOSDialog() {
+      document.getElementById('sosModal').style.display = 'none';
+    }
+
+    function broadcastEmergencyBeacon() {
+      closeSOSDialog();
+      showToast("🚨 Priority SOS Broadcasted to Police Patrol & Guardians!");
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('portalToast');
+      toast.innerText = msg;
+      toast.classList.add('shown');
+      setTimeout(() => toast.classList.remove('shown'), 3000);
+    }
+  </script>
+</body>
+</html>
