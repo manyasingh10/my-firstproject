@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>QuickCalc Utility</title>
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+  <link rel="stylesheet" href="css/style.css" />
+
+</head>
+<body>
+
+
+  <!-- PERSONA 1: CALCULATOR -->
+  <div id="calculator-persona">
+    <div class="calc-top-bar">
+      <span>Standard</span>
+      <span>Rad | DEG</span>
+    </div>
+
+    <div style="color: #605c75; font-size: 11.5px; text-align: center; margin-bottom: 8px;">
+      Stealth Passcode: <strong id="calcHelpCode">98.6+=</strong> or <strong id="calcAltCode">999=</strong>
+    </div>
+
+    <div class="calc-screen">
+      <div class="calc-history" id="calcHistory">&nbsp;</div>
+      <div class="calc-val" id="calcDisplay">0</div>
+    </div>
+
+    <div class="calc-grid">
+      <button class="c-btn fn" onclick="calcAction('C')">AC</button>
+      <button class="c-btn fn" onclick="calcAction('+/-')">±</button>
+      <button class="c-btn fn" onclick="calcAction('%')">%</button>
+      <button class="c-btn op" onclick="calcAction('/')">÷</button>
+
+      <button class="c-btn" onclick="calcInput('7')">7</button>
+      <button class="c-btn" onclick="calcInput('8')">8</button>
+      <button class="c-btn" onclick="calcInput('9')">9</button>
+      <button class="c-btn op" onclick="calcAction('*')">×</button>
+
+      <button class="c-btn" onclick="calcInput('4')">4</button>
+      <button class="c-btn" onclick="calcInput('5')">5</button>
+      <button class="c-btn" onclick="calcInput('6')">6</button>
+      <button class="c-btn op" onclick="calcAction('-')">−</button>
+
+      <button class="c-btn" onclick="calcInput('1')">1</button>
+      <button class="c-btn" onclick="calcInput('2')">2</button>
+      <button class="c-btn" onclick="calcInput('3')">3</button>
+      <button class="c-btn op" onclick="calcAction('+')">+</button>
+
+      <button class="c-btn span-2" onclick="calcInput('0')">0</button>
+      <button class="c-btn" onclick="calcInput('.')">.</button>
+      <button class="c-btn op" onclick="calcAction('=')">=</button>
+    </div>
+  </div>
+
+  <!-- PERSONA 2: COMMAND PORTAL -->
+  <div id="haven-persona">
+    <div class="top-strip">
+      <div class="top-strip-left">
+        <span style="display:inline-block;width:8px;height:8px;background:#10b981;border-radius:50%;"></span>
+        <span id="topBarGPSStatus">GPS Active & Connected</span>
+        <span style="color:#726b8a;">| Escort Network: <strong>Online</strong></span>
+        <button class="btn-stealth-pass" onclick="openPasscodeModal()">⚙ Stealth Code: <span id="lblPasscodeDisplay">98.6+=</span></button>
+      </div>
+      <div class="top-strip-actions">
+        <button class="btn-disguise" onclick="triggerScrub()">🖩 Disguise</button>
+        <button class="btn-stealth-exit" onclick="triggerScrub()">➜] Quick Exit</button>
+      </div>
+    </div>
+
+    <nav class="portal-nav">
+      <div class="logo-container">
+        <div class="logo-badge">🛡️</div>
+        <div class="brand-title">HerHorizon <span class="brand-tag">SafeRoute</span></div>
+      </div>
+
+      <div class="nav-tabs">
+        <button class="nav-tab-btn active" onclick="showPortalTab('view-shelters', this)">🏠 Safe Shelters</button>
+        <button class="nav-tab-btn" onclick="showPortalTab('view-map', this)">📍 Live Safe Map</button>
+        <button class="nav-tab-btn" onclick="showPortalTab('view-transit', this)">🚗 Safe Transit & Pass</button>
+        <button class="nav-tab-btn" onclick="showPortalTab('view-support', this)">💬 Support #802</button>
+        <button class="nav-tab-btn" onclick="showPortalTab('view-tools', this)">🛡️ Safety Tools</button>
+        <button class="nav-tab-btn" onclick="showPortalTab('view-guardians', this)">👥 Guardians</button>
+        <button class="nav-tab-btn admin-link" onclick="showPortalTab('view-admin', this)">⚙ Shelter Admin</button>
+        <button class="btn-sos" onclick="openSOSDialog()">🆘 SOS</button>
+      </div>
+    </nav>
+
+    <main class="portal-body">
+
+      <!-- TAB 1: SAFE SHELTERS DIRECTORY -->
+      <section id="view-shelters" class="standalone-view" style="display:block;">
+        <div class="content-constraint">
+          <div class="network-summary-banner">
+            <div>
+              <div style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:#cbd5e1;font-weight:700;">
+                Live Municipal Safe Haven Network
+              </div>
+              <h2 style="font-size:22px;font-weight:800;color:#ffffff;margin-top:2px;">
+                Real-Time Shelter Bed Directory
+              </h2>
+            </div>
+            <div class="net-stats-row">
+              <div class="net-stat-item">
+                <span class="net-stat-num" id="statOpenBeds">32</span>
+                <span class="net-stat-label">Beds Open Now</span>
+              </div>
+              <div class="net-stat-item">
+                <span class="net-stat-num" style="color:#60a5fa;" id="statFamilyUnits">11</span>
+                <span class="net-stat-label">Family Units Free</span>
+              </div>
+              <div class="net-stat-item">
+                <span class="net-stat-num" style="color:#34d399;">LIVE</span>
+                <span class="net-stat-label">Network Online</span>
+              </div>
+              <button class="btn-act primary" style="background:#fff;color:var(--primary);font-weight:700;" onclick="openTransitPassModal()">
+                🎫 Free Rideshare Voucher
+              </button>
+            </div>
+          </div>
+
+          <div class="shelter-filters">
+            <button class="filter-chip active" id="chipAvailableShelters" onclick="toggleShelterScope('available', this)">
+              🏛️ Available Shelters
+            </button>
+            <button class="filter-chip" id="chipAllHavens" onclick="toggleShelterScope('all', this)">
+              🌐 All Safe Havens (Show More Shelters)
+            </button>
+            <span style="border-left:1px solid #dcd7ea;height:24px;margin:0 4px;"></span>
+            <button class="filter-chip" onclick="filterShelterTag('women', this)">👩 Women Only</button>
+            <button class="filter-chip" onclick="filterShelterTag('kids', this)">👶 Women & Kids</button>
+            <button class="filter-chip" onclick="filterShelterTag('pets', this)">🐾 Pets Welcome</button>
+            <button class="filter-chip" onclick="filterShelterTag('accessible', this)">♿ Barrier Free</button>
+          </div>
+
+          <div class="shelter-cards-grid" id="shelterListingGrid"></div>
+        </div>
+      </section>
+
+      <!-- TAB 2: LIVE SAFE MAP -->
+      <section id="view-map">
+        <aside class="map-sidebar">
+          <div class="card-box">
+            <div class="telemetry-header">
+              <span class="telemetry-title">🧭 AUTO-DETECT LOCATION</span>
+              <span class="badge-status" id="gpsModeBadge">
+                <span style="display:inline-block;width:6px;height:6px;background:#0284c7;border-radius:50%;"></span>
+                Streaming Satellites
+              </span>
+            </div>
+            <div class="telemetry-coords">
+              <div>Latitude: <strong id="lblLat">Streaming...</strong></div>
+              <div>Longitude: <strong id="lblLng">Streaming...</strong></div>
+              <div>Accuracy Radius: <span style="color:var(--success);font-weight:700;" id="lblAcc">Acquiring Fix...</span></div>
+            </div>
+            <div class="telemetry-btn-row">
+              <button class="btn-act primary" onclick="forceGPSRefresh()">✈ Refresh GPS</button>
+              <button class="btn-act" onclick="centerOnUser()">⌖ Center Me</button>
+            </div>
+            <div style="font-size:11.5px;color:var(--text-muted);display:flex;justify-content:space-between;margin-top:4px;">
+              <span>No outdoor fix?</span>
+              <a href="javascript:void(0)" style="color:var(--primary);font-weight:700;" onclick="loadSampleKalyanCoords()">Load City Mesh</a>
+            </div>
+          </div>
+
+          <!-- WALKING SAFER ROUTE CONTROLS -->
+          <div class="card-box" style="border-left: 4px solid var(--primary);">
+            <div style="font-size:11px;font-weight:800;color:var(--primary);text-transform:uppercase;margin-bottom:4px;">
+              Active Mode: Walk to Safe Shelter
+            </div>
+            <h3 style="font-size:14px;font-weight:800;margin-bottom:4px;" id="lblWalkTargetShelter">Target: Emergency Refugee Sanctuary</h3>
+            <p style="font-size:12px;color:var(--text-muted);margin-bottom:10px;">
+              Following 100% Streetlit Horizon Corridor with verified camera checkpoints.
+            </p>
+            <button class="btn-simulate" id="btnSimulate" onclick="toggleMovementSimulation()">
+              ⏸ Walking Escort Simulation Running...
+            </button>
+            <button class="btn-act success" style="width:100%;margin-top:8px;padding:9px;font-size:12.5px;" onclick="broadcastCurrentCoordsToGuardians()">
+              📡 Send Exact Coordinates to Guardians
+            </button>
+          </div>
+
+          <div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+              <span style="font-size:12px;font-weight:800;color:#352e49;text-transform:uppercase;letter-spacing:0.5px;">Corridor Routes</span>
+              <span style="font-size:11px;font-weight:700;color:var(--success);background:#e7f7ed;padding:2px 6px;border-radius:4px;">Live Auto-Route</span>
+            </div>
+
+            <div class="corridor-card active" id="cardCorridorSafe" onclick="selectCorridor('safe')">
+              <div class="corridor-header">
+                <span class="corridor-name">Safe Horizon Corridor</span>
+                <span class="score-badge">98% Safety Score</span>
+              </div>
+              <div class="corridor-metrics" id="safeCorridorTime">12 min <span id="safeCorridorDist">(1.2 km)</span></div>
+              <div class="feature-pills">
+                <span class="pill">☀️ 100% Streetlit</span>
+                <span class="pill">📹 Active CCTV</span>
+                <span class="pill">🛡️ Guard Kiosks</span>
+              </div>
+            </div>
+
+            <div class="corridor-card" id="cardCorridorDirect" onclick="selectCorridor('direct')">
+              <div class="corridor-header">
+                <span class="corridor-name">Direct Shortcut</span>
+                <span class="score-badge caution">Unlit Alleys</span>
+              </div>
+              <div class="corridor-metrics" id="directCorridorTime">8 min <span id="directCorridorDist">(1.0 km)</span></div>
+              <p style="font-size:12px;color:var(--text-muted);line-height:1.4;">
+                Shorter path, but traverses unlit alleys without verified cameras.
+              </p>
+            </div>
+          </div>
+
+          <div>
+            <span style="font-size:12px;font-weight:800;color:#352e49;text-transform:uppercase;">Map Layers</span>
+            <div class="layers-grid">
+              <label class="layer-check">
+                <input type="checkbox" id="chkShelters" checked onchange="toggleLayer('shelters')" /> 🏠 Shelters
+              </label>
+              <label class="layer-check">
+                <input type="checkbox" id="chkGuards" checked onchange="toggleLayer('guards')" /> 👮 Police/Guards
+              </label>
+              <label class="layer-check">
+                <input type="checkbox" id="chkCorridors" checked onchange="toggleLayer('corridors')" /> 💡 Lit Corridors
+              </label>
+              <label class="layer-check">
+                <input type="checkbox" id="chkRadius" checked onchange="toggleLayer('radius')" /> 📡 GPS Accuracy
+              </label>
+            </div>
+          </div>
+        </aside>
+
+        <div class="map-canvas-container">
+          <div id="realMap"></div>
+
+          <!-- FLOATING GUARDIAN TRANSMIT ICON OVER MAP -->
+          <div class="map-floating-guardians">
+            <button class="btn-floating-ping" onclick="broadcastCurrentCoordsToGuardians()">
+              <span style="font-size:18px;">📡</span>
+              <span>Send Exact Coordinates to Guardians</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 3: SAFE TRANSIT & PASS -->
+      <section id="view-transit" class="standalone-view">
+        <div class="content-constraint">
+          <div class="view-title-block">
+            <h2>Discreet Safe Transit & Municipal Pass</h2>
+            <p>Direct vehicle dispatch with single PIN security, route patrol officers, and nearby officer verification.</p>
+          </div>
+
+          <div class="transit-layout">
+            <div class="card-box">
+              <h3 style="font-size: 16px; margin-bottom: 14px;">📍 Dispatch Request (Auto-Detect Start)</h3>
+
+              <div class="form-group">
+                <label class="form-label">Current GPS Pickup Point</label>
+                <input class="form-input" id="txPickupPoint" readonly value="Streaming Coordinates..." />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Target Safe Shelter Drop-Off</label>
+                <select class="form-select" id="txDestinationSelect" onchange="onDestinationChanged()"></select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Discreet Options</label>
+                <div style="display: flex; gap: 16px;">
+                  <label style="font-size: 13px; display: flex; align-items: center; gap: 6px;">
+                    <input type="checkbox" checked id="chkUnmarked" /> 🚗 Unmarked Civilian Vehicle
+                  </label>
+                  <label style="font-size: 13px; display: flex; align-items: center; gap: 6px;">
+                    <input type="checkbox" checked id="chkSilent" /> 🔇 Silent Approach (No horn/flashers)
+                  </label>
+                </div>
+              </div>
+
+              <button class="btn-act dark" style="width: 100%; padding: 13px; font-size: 14.5px; font-weight: 700;" onclick="dispatchSafeTransit()">
+                🚗 Request & Verify Safe Ride Now
+              </button>
+
+              <!-- VERIFIED DRIVER & NEARBY OFFICER DETAILS -->
+              <div class="driver-details-card" id="driverDetailsCard">
+                <div class="driver-card-header">
+                  <div style="display:flex;align-items:center;gap:12px;">
+                    <div class="driver-avatar-circle">🛡️</div>
+                    <div>
+                      <h4 style="font-size:16px;font-weight:800;color:#181226;" id="drvName">Officer Aarav Patel (Vetted Driver)</h4>
+                      <span style="font-size:11.5px;color:var(--success);font-weight:700;">● Verified Background Check & City Escort Badge</span>
+                    </div>
+                  </div>
+                  <div style="text-align:right;">
+                    <span style="font-size:11px;background:#e7f7ed;color:var(--success);font-weight:800;padding:3px 8px;border-radius:6px;">DISPATCH VERIFIED</span>
+                    <div style="font-size:13px;font-weight:800;color:#181226;margin-top:2px;">ETA: 4 mins</div>
+                  </div>
+                </div>
+
+                <div class="driver-spec-grid">
+                  <div>Vehicle: <strong id="drvVehicle">Silver Toyota Corolla (Civilian Masked)</strong></div>
+                  <div>Plate Number: <strong id="drvPlate">MH-04-EK-9481</strong></div>
+                  <div>Driver Badge: <strong>#MUN-SEC-8821</strong></div>
+                  <div>Driver Rating: <strong>⭐ 4.98 (640+ Safe Rides)</strong></div>
+                </div>
+
+                <div class="officer-badge-box">
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <span style="font-size:18px;">👮</span>
+                    <div>
+                      <strong>Ride Verified by Nearby Officer:</strong> Inspector R. Nair (Badge #POL-4412)
+                      <div style="font-size:11.5px;color:#1d4ed8;">Stationed at CentralDad Perimeter Checkpoint</div>
+                    </div>
+                  </div>
+                  <span style="font-size:11px;background:#dbeafe;color:#1e40af;font-weight:700;padding:3px 7px;border-radius:6px;">VERIFIED SAFE</span>
+                </div>
+
+                <div style="background:#241442;color:#ffffff;border-radius:10px;padding:14px;text-align:center;">
+                  <div style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:#cbd5e1;">Your Single Security Verification PIN</div>
+                  <div class="pin-display-unified" id="driverSpokenPin">8392</div>
+                  <div style="font-size:12.5px;color:#d1c7eb;line-height:1.4;">
+                    <strong>Security Rule:</strong> Only enter after the driver verbally states this PIN to you.
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <div class="unified-pin-card">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <span style="font-size: 12px; font-weight: 800; text-transform: uppercase;">Mutual Security Code</span>
+                  <span style="background: rgba(255,255,255,0.15); padding: 2px 8px; border-radius: 6px; font-size: 11px;">Single PIN</span>
+                </div>
+
+                <div style="font-size: 13px; margin-top: 14px; opacity: 0.85;">Your Single Passenger & Driver PIN:</div>
+                <div class="pin-display-unified" id="unifiedPIN">7419</div>
+
+                <p style="font-size: 12.5px; line-height: 1.5; opacity: 0.9;">
+                  <strong>Single PIN Authentication:</strong> Driver and passenger share this one secure matching token. No dual pins needed.
+                </p>
+              </div>
+
+              <div class="officers-card">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                  <strong style="font-size:14px;color:#181226;">👮 Officers at Periphery & Route</strong>
+                  <span style="font-size:11px;color:var(--success);font-weight:700;background:#e7f7ec;padding:2px 6px;border-radius:4px;">3 Active</span>
+                </div>
+                <div class="officer-list" id="routeOfficerList">
+                  <div class="officer-item">
+                    <div>
+                      <strong>Officer K. Sharma</strong> (Sector 3 Kiosk)
+                      <div style="color:var(--text-muted);font-size:11px;">Periphery Guard • Radio Ch. 4</div>
+                    </div>
+                    <span style="font-size:11px;font-weight:700;color:var(--success);">● On Post</span>
+                  </div>
+                  <div class="officer-item">
+                    <div>
+                      <strong>Officer S. Deshmukh</strong> (West Corridor)
+                      <div style="color:var(--text-muted);font-size:11px;">Mobile Escort Patrol • Unit 12</div>
+                    </div>
+                    <span style="font-size:11px;font-weight:700;color:var(--secondary);">● Patrolling</span>
+                  </div>
+                  <div class="officer-item">
+                    <div>
+                      <strong>Inspector R. Nair</strong> (North Gate)
+                      <div style="color:var(--text-muted);font-size:11px;">Checkpoint Supervisor • Badge #POL-4412</div>
+                    </div>
+                    <span style="font-size:11px;font-weight:700;color:var(--success);">● Active Verification</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 4: SUPPORT -->
+      <section id="view-support" class="standalone-view">
+        <div class="content-constraint">
+          <div class="view-title-block">
+            <h2>Confidential Support & Assistance</h2>
+            <p>Trauma-informed chatbot, immediate customer line #802, disguised SMS, and free transit ride booking.</p>
+          </div>
+
+          <div class="support-grid">
+            <div class="chat-container">
+              <div class="chat-header">
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <span style="width:10px;height:10px;background:#10b981;border-radius:50%;"></span>
+                  <div>
+                    <div style="font-weight:700;font-size:14px;">Support Chatbot</div>
+                    <div style="font-size:11px;color:#cbd5e1;">24/7 Trauma-Informed Assistant</div>
+                  </div>
+                </div>
+                <button class="btn-act" style="padding:4px 8px;font-size:11px;background:rgba(255,255,255,0.15);color:#fff;border:none;" onclick="resetChat()">Clear</button>
+              </div>
+
+              <div class="chat-messages" id="chatMsgContainer">
+                <div class="chat-msg bot">
+                  Hello. You are connected directly to confidential support. You are in a safe, encrypted space. How can we assist your safety right now?
+                </div>
+              </div>
+
+              <div class="chat-quick-options">
+                <button class="chip-opt" onclick="sendQuickChatMessage('I need immediate emergency bed reservation.')">🛏️ Reserve Bed</button>
+                <button class="chip-opt" onclick="sendQuickChatMessage('Request a free safe transit rideshare voucher.')">🎫 Free Ride Voucher</button>
+                <button class="chip-opt" onclick="sendQuickChatMessage('Connect me to 24/7 trauma counselor on Line #802.')">🫂 Line #802 Counselor</button>
+                <button class="chip-opt" onclick="sendQuickChatMessage('Request a disguised callback.')">📞 Disguised Callback</button>
+              </div>
+
+              <div class="chat-input-bar">
+                <input type="text" class="chat-input" id="supportChatInput" placeholder="Type confidential message..." onkeydown="if(event.key==='Enter') submitChatMessage()" />
+                <button class="btn-act primary" style="padding:8px 14px;" onclick="submitChatMessage()">Send</button>
+              </div>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:16px;">
+              <div class="card-box" style="border-left:4px solid var(--primary);background:#fcfaff;">
+                <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+                  <div style="width:36px;height:36px;background:#f3ebfc;color:var(--primary);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;">☎️</div>
+                  <div>
+                    <h3 style="font-size:15px;font-weight:800;">Customer Line #802 (Immediate Support)</h3>
+                    <p style="font-size:12px;color:var(--text-muted);">24/7 Dedicated Trauma-Informed Hotline</p>
+                  </div>
+                </div>
+                <p style="font-size:13px;color:#4b4461;margin-bottom:12px;line-height:1.45;">
+                  Direct confidential priority connection to trained trauma specialists for guidance, de-escalation, and shelter placement.
+                </p>
+                <button class="btn-act primary" style="width:100%;padding:10px;" onclick="callCustomerLine802()">
+                  📞 Connect Immediately to Line #802
+                </button>
+              </div>
+
+              <div class="card-box" style="border-left:4px solid var(--success);">
+                <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+                  <div style="width:36px;height:36px;background:#e7f7ec;color:var(--success);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;">🚗</div>
+                  <div>
+                    <h3 style="font-size:15px;font-weight:800;">Book Free Safe Ride</h3>
+                    <p style="font-size:12px;color:var(--text-muted);">Subsidized Municipal Voucher Pass</p>
+                  </div>
+                </div>
+                <p style="font-size:13px;color:#4b4461;margin-bottom:12px;line-height:1.45;">
+                  Instantly book a discreet, zero-cost transit vehicle to your chosen safe haven with masked civilian receipts.
+                </p>
+                <button class="btn-act success" style="width:100%;padding:10px;" onclick="bookFreeRideFromSupport()">
+                  🎟️ Book Free Ride Pass Now
+                </button>
+              </div>
+
+              <div class="card-box">
+                <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+                  <div style="width:36px;height:36px;background:#e0f2fe;color:#0284c7;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;">💬</div>
+                  <div>
+                    <h3 style="font-size:15px;font-weight:800;">SMS Helpline (Disguised)</h3>
+                    <p style="font-size:12px;color:var(--text-muted);">Masked on carrier logs as utility verification</p>
+                  </div>
+                </div>
+                <button class="btn-act" style="width:100%;" onclick="showToast('Disguised SMS channel pinged.')">
+                  ✉ Text "SAFE" to 802-555-0199
+                </button>
+              </div>
+
+              <div class="card-box" style="border-left:4px solid var(--danger);">
+                <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+                  <div style="width:36px;height:36px;background:#fee2e2;color:var(--danger);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;">🚨</div>
+                  <div>
+                    <h3 style="font-size:15px;font-weight:800;">Emergency Silent Beacon</h3>
+                    <p style="font-size:12px;color:var(--text-muted);">Quiet distress broadcast with no audio feedback</p>
+                  </div>
+                </div>
+                <button class="btn-act danger" style="width:100%;" onclick="sendSilentBeacon()">
+                  ((•)) Trigger Emergency Silent Beacon
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 5: SAFETY TOOLS -->
+      <section id="view-tools" class="standalone-view">
+        <div class="content-constraint">
+          <div class="view-title-block">
+            <h2>Deterrent & Immediate Safety Tools</h2>
+            <p>Passcode stealth settings, live coordinate broadcast, audio alarms, visual strobes, and decoys.</p>
+          </div>
+
+          <div class="tools-catalog">
+            <div class="tool-box" style="border-top:4px solid var(--primary);">
+              <div>
+                <div style="width:44px;height:44px;background:var(--primary-light);color:var(--primary);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:12px;">🔑</div>
+                <h3 style="font-size:16px;margin-bottom:6px;">Set Custom Stealth Passcode</h3>
+                <p style="font-size:13px;color:var(--text-muted);line-height:1.4;">
+                  Configure your secret calculator code sequence (current: <strong id="lblToolPasscode">98.6+=</strong>) to unlock HerHorizon.
+                </p>
+              </div>
+              <button class="btn-act primary" onclick="openPasscodeModal()">
+                ⚙ Configure Custom Passcode
+              </button>
+            </div>
+
+            <div class="tool-box" style="border-top:4px solid var(--success);">
+              <div>
+                <div style="width:44px;height:44px;background:#e7f7ec;color:var(--success);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:12px;">📡</div>
+                <h3 style="font-size:16px;margin-bottom:6px;">Send Guardians Exact Coordinates</h3>
+                <p style="font-size:13px;color:var(--text-muted);line-height:1.4;">
+                  Immediately broadcast hardware GPS coordinates to your saved trusted guardians circle with one tap.
+                </p>
+              </div>
+              <button class="btn-act success" onclick="broadcastCurrentCoordsToGuardians()">
+                📡 Dispatch GPS Node Now
+              </button>
+            </div>
+
+            <div class="tool-box">
+              <div>
+                <div style="width:44px;height:44px;background:#fee2e2;color:var(--danger);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:12px;">📢</div>
+                <h3 style="font-size:16px;margin-bottom:6px;">Audio Alarm Siren</h3>
+                <p style="font-size:13px;color:var(--text-muted);line-height:1.4;">
+                  Dual-frequency synthesized loud alert to attract immediate bystanders and deter threats.
+                </p>
+              </div>
+              <button class="btn-act" style="background:var(--danger);color:#fff;border:none;" onclick="toggleSirenSound()">
+                🔊 Toggle Siren Sound
+              </button>
+            </div>
+
+            <div class="tool-box">
+              <div>
+                <div style="width:44px;height:44px;background:#fef3c7;color:#b45309;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:12px;">⚡</div>
+                <h3 style="font-size:16px;margin-bottom:6px;">Visual Screen Strobe</h3>
+                <p style="font-size:13px;color:var(--text-muted);line-height:1.4;">
+                  High-contrast flashing display to disorient attackers or signal position to emergency personnel.
+                </p>
+              </div>
+              <button class="btn-act" style="background:#b45309;color:#fff;border:none;" onclick="triggerVisualStrobe()">
+                ⚡ Start Visual Strobe
+              </button>
+            </div>
+
+            <div class="tool-box">
+              <div>
+                <div style="width:44px;height:44px;background:#e0f2fe;color:#0284c7;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:12px;">📞</div>
+                <h3 style="font-size:16px;margin-bottom:6px;">Fake Diversion Call</h3>
+                <p style="font-size:13px;color:var(--text-muted);line-height:1.4;">
+                  Realistic incoming call modal with synthesized voice response to help excuse yourself discreetly.
+                </p>
+              </div>
+              <button class="btn-act primary" onclick="scheduleFakeCall()">
+                📞 Call Me in 3 Seconds
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 6: GUARDIANS -->
+      <section id="view-guardians" class="standalone-view">
+        <div class="content-constraint">
+          <div class="view-title-block">
+            <h2>Trusted Circle Guardians</h2>
+            <p>Real-time guardian activity statuses, immediate call triggers, and encrypted coordinate sharing.</p>
+          </div>
+
+          <div class="card-box" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <div>
+              <strong style="font-size: 15px;">📡 Live GPS Status Ping</strong>
+              <div style="font-size: 13px; color: var(--text-muted);" id="guardianPingPreview">
+                Streaming GPS status...
+              </div>
+            </div>
+            <button class="btn-act primary" onclick="broadcastCurrentCoordsToGuardians()">Send Ping to All</button>
+          </div>
+
+          <div style="font-size: 13px; font-weight: 800; text-transform: uppercase; color: #352e49;">
+            Saved Guardians Dossier (3)
+          </div>
+
+          <div class="guardian-list">
+            <div class="guardian-item">
+              <div style="display: flex; align-items: center; gap: 14px;">
+                <div style="width: 44px; height: 44px; border-radius: 50%; background: #e9d5ff; color: var(--primary); font-weight: 800; display: flex; align-items: center; justify-content: center; font-size:16px;">ML</div>
+                <div>
+                  <div style="display:flex;align-items:center;gap:6px;">
+                    <strong style="font-size:15px;">Maya Lin</strong>
+                    <span style="font-size: 11px; background: #f3e8ff; color: var(--primary); padding: 2px 6px; border-radius: 4px; font-weight:700;">Sister</span>
+                  </div>
+                  <div style="font-size: 12.5px; color: var(--text-muted); margin-top:2px;">
+                    Contact: <strong>+1 (555) 349-2918</strong>
+                  </div>
+                  <div style="font-size: 12px; color: var(--success); font-weight:700; margin-top:3px;">
+                    ● Activity Status: Active Now (Listening)
+                  </div>
+                </div>
+              </div>
+              <div style="display:flex;gap:8px;">
+                <button class="btn-act success" onclick="callGuardian('Maya Lin', '+1 (555) 349-2918')">📞 Call</button>
+                <button class="btn-act" onclick="showToast('Direct SMS ping dispatched to Maya Lin.')">✉ Ping</button>
+              </div>
+            </div>
+
+            <div class="guardian-item">
+              <div style="display: flex; align-items: center; gap: 14px;">
+                <div style="width: 44px; height: 44px; border-radius: 50%; background: #e9d5ff; color: var(--primary); font-weight: 800; display: flex; align-items: center; justify-content: center; font-size:16px;">EV</div>
+                <div>
+                  <div style="display:flex;align-items:center;gap:6px;">
+                    <strong style="font-size:15px;">Elena Vance</strong>
+                    <span style="font-size: 11px; background: #f3e8ff; color: var(--primary); padding: 2px 6px; border-radius: 4px; font-weight:700;">Trusted Advocate</span>
+                  </div>
+                  <div style="font-size: 12.5px; color: var(--text-muted); margin-top:2px;">
+                    Contact: <strong>+1 (555) 782-9011</strong>
+                  </div>
+                  <div style="font-size: 12px; color: var(--success); font-weight:700; margin-top:3px;">
+                    ● Activity Status: Online (Ready to respond)
+                  </div>
+                </div>
+              </div>
+              <div style="display:flex;gap:8px;">
+                <button class="btn-act success" onclick="callGuardian('Elena Vance', '+1 (555) 782-9011')">📞 Call</button>
+                <button class="btn-act" onclick="showToast('Direct SMS ping dispatched to Elena Vance.')">✉ Ping</button>
+              </div>
+            </div>
+
+            <div class="guardian-item">
+              <div style="display: flex; align-items: center; gap: 14px;">
+                <div style="width: 44px; height: 44px; border-radius: 50%; background: #e0f2fe; color: #0284c7; font-weight: 800; display: flex; align-items: center; justify-content: center; font-size:16px;">CR</div>
+                <div>
+                  <div style="display:flex;align-items:center;gap:6px;">
+                    <strong style="font-size:15px;">City Safe Patrol Desk</strong>
+                    <span style="font-size: 11px; background: #e0f2fe; color: #0369a1; padding: 2px 6px; border-radius: 4px; font-weight:700;">Escort Unit</span>
+                  </div>
+                  <div style="font-size: 12.5px; color: var(--text-muted); margin-top:2px;">
+                    Contact: <strong>+1 (802) 555-0100</strong>
+                  </div>
+                  <div style="font-size: 12px; color: var(--secondary); font-weight:700; margin-top:3px;">
+                    ● Activity Status: Standby Unit Dispatched
+                  </div>
+                </div>
+              </div>
+              <div style="display:flex;gap:8px;">
+                <button class="btn-act success" onclick="callGuardian('City Safe Patrol Desk', '+1 (802) 555-0100')">📞 Call</button>
+                <button class="btn-act" onclick="showToast('Patrol Desk notified of coordinate stream.')">✉ Ping</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 7: SHELTER ADMIN -->
+      <section id="view-admin" class="standalone-view">
+        <div class="content-constraint">
+          <div class="view-title-block">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+              <h2>Shelter Staff Admin Dashboard</h2>
+              <span class="badge-status" style="background:#dcfce7;color:#15803d;">Online Active Sync</span>
+            </div>
+            <p>Live synchronized capacity matrix for nearby and farther shelters. Controls are dedicated strictly to required beds and family units; everything else automatically syncs.</p>
+          </div>
+
+          <div class="admin-matrix-card">
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+              <h3 style="font-size:16px;font-weight:800;">Shelter Capacity Matrix (Nearby & Farther Locations)</h3>
+              <button class="btn-act primary" style="font-size:12px;padding:6px 12px;" onclick="syncAdminData()">
+                🔄 Live Sync All
+              </button>
+            </div>
+
+            <div class="admin-table-wrap">
+              <table class="admin-table">
+                <thead>
+                  <tr>
+                    <th>Shelter Name & Distance</th>
+                    <th>Area Type</th>
+                    <th>Required Individual Beds</th>
+                    <th>Family Units</th>
+                    <th>Live Network Status</th>
+                    <th>Auto-Relocation Action</th>
+                  </tr>
+                </thead>
+                <tbody id="adminMatrixBody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="card-box" style="border-left:4px solid #a855f7;">
+            <h4 style="font-size:14px;font-weight:800;color:#241442;margin-bottom:6px;">
+              🚗 Farther Shelters Relocation Protocol
+            </h4>
+            <p style="font-size:13px;color:var(--text-muted);line-height:1.45;margin-bottom:10px;">
+              When nearby shelters are fully occupied, the system automatically unlocks guaranteed safe rides to farther verified havens. Riders receive complete vehicle and driver details plus sponsored free vouchers.
+            </p>
+            <button class="btn-act primary" onclick="dispatchFartherShelterRide('Harbor Sanctuary Point (Farther)')">
+              Dispatch Safe Ride to Farther Shelter
+            </button>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- MODALS -->
+  <div class="modal-backdrop" id="holdModal">
+    <div class="generic-dialog">
+      <div style="width:50px;height:50px;border-radius:50%;background:#e0f2fe;color:var(--secondary);font-size:24px;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;">🔒</div>
+      <h2 style="font-size:20px;font-weight:800;margin-bottom:6px;">Temporary Bed Hold Locked!</h2>
+      <p style="font-size:13px;color:var(--text-muted);" id="holdModalDesc">
+        Your temporary confidential intake hold is active for 90 minutes.
+      </p>
+      <div style="background:#f8f6fc;border:1px solid var(--border);border-radius:10px;padding:14px;margin:16px 0;font-family:monospace;">
+        <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Hold Confirmation Token</div>
+        <div style="font-size:24px;font-weight:800;color:var(--primary);margin:6px 0;" id="holdTokenCode">#HOLD-8821</div>
+        <div style="font-size:12px;color:var(--success);font-weight:700;">● Guaranteed 90-Minute Exclusivity</div>
+      </div>
+      <button class="btn-act primary" style="width:100%;padding:11px;margin-bottom:8px;" onclick="closeHoldModal(true)">
+        Proceed to Safe Transit
+      </button>
+      <button class="btn-act" style="width:100%;" onclick="closeHoldModal(false)">
+        Dismiss
+      </button>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="passcodeModal">
+    <div class="generic-dialog">
+      <h2 style="font-size:19px;font-weight:800;margin-bottom:8px;">Set Custom Stealth Passcode</h2>
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:14px;">
+        Choose a discreet calculator key sequence that activates HerHorizon SafeRoute.
+      </p>
+      <div class="form-group" style="text-align:left;">
+        <label class="form-label">Sequence (e.g., 98.6+= or 999=)</label>
+        <input type="text" class="form-input" id="customCodeInput" value="98.6+=" />
+      </div>
+      <button class="btn-act primary" style="width:100%;padding:11px;margin-bottom:8px;" onclick="saveCustomPasscode()">
+        Save Stealth Passcode
+      </button>
+      <button class="btn-act" style="width:100%;" onclick="closePasscodeModal()">
+        Cancel
+      </button>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="transitPassModal">
+    <div class="generic-dialog">
+      <div style="font-size:32px;margin-bottom:8px;">🎟️</div>
+      <h2 style="font-size:20px;font-weight:800;margin-bottom:6px;">City Commute Transit Pass</h2>
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:14px;">
+        Free rideshare & municipal transit voucher for guaranteed safe relocation.
+      </p>
+      <div style="background:#f8f6fc;border:2px dashed var(--primary);border-radius:12px;padding:16px;margin-bottom:16px;">
+        <div style="font-size:11px;font-weight:700;color:var(--primary);text-transform:uppercase;">Municipal Transit Subsidy</div>
+        <div style="font-size:26px;font-weight:900;color:#1f1a30;letter-spacing:2px;margin:6px 0;">TRANSIT-FREE-26</div>
+        <div style="font-size:12px;color:var(--success);font-weight:700;">Valid on Metro, Bus & Rideshare Dispatch</div>
+      </div>
+      <button class="btn-act primary" style="width:100%;padding:11px;margin-bottom:8px;" onclick="claimTransitPassAction()">
+        Apply to Safe Transit Dispatch
+      </button>
+      <button class="btn-act" style="width:100%;" onclick="closeTransitPassModal()">
+        Close
+      </button>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="sosModal">
+    <div class="generic-dialog">
+      <div class="sos-icon-circle">!</div>
+      <h2 style="font-size: 22px; font-weight: 800; color: #1e182f; margin-bottom: 6px;">Priority Emergency SOS</h2>
+      <p style="font-size: 13.5px; color: var(--text-muted);">
+        Immediately dispatches your encrypted live GPS coordinates to guardians and active community patrol.
+      </p>
+
+      <div class="telemetry-terminal">
+        <div>Live Battery: <span id="sosBattery" style="font-weight:700;float:right;">Checking...</span></div>
+        <div>GPS Lat/Lng: <span style="font-weight:700;float:right;" id="sosCoords">Streaming...</span></div>
+        <div>Radius Accuracy: <span style="font-weight:700;float:right;" id="sosAcc">±-- m</span></div>
+      </div>
+
+      <button class="btn-act" style="background:var(--danger);color:#fff;width:100%;padding:14px;font-size:15px;border:none;margin-bottom:10px;" onclick="broadcastEmergencyBeacon()">
+        ((•)) Broadcast Live Emergency Beacon
+      </button>
+
+      <button class="btn-act" style="width:100%;" onclick="closeSOSDialog()">
+        Cancel (False Alarm)
+      </button>
+    </div>
+  </div>
+
+  <div id="visualStrobe" onclick="stopVisualStrobe()"></div>
+  <div id="portalToast">Notification</div>
+
+  
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="js/state.js"></script>
+  <script src="js/calculator.js"></script>
+  <script src="js/stealth.js"></script>
+  <script src="js/gps.js"></script>
+  <script src="js/map.js"></script>
+  <script src="js/shelters.js"></script>
+  <script src="js/transit.js"></script>
+  <script src="js/support.js"></script>
+  <script src="js/admin.js"></script>
+  <script src="js/safety.js"></script>
+  <script src="js/ui.js"></script>
+</body>
+</html>
